@@ -103,29 +103,29 @@ tempt = make_template(Fs, f0, gam, 11.6/SI_to_GeV, mass)[0]
 #chi2pts = np.logical_and( tt >= 0, tt<1.5/gam) 
 #chi2tempf = tempf[chi2pts]*normf/SI_to_GeV
 
-def get_chi2(a, d, idx):
-    ll = len(chi2tempf)
+# def get_chi2(a, d, idx):
+#     ll = len(chi2tempf)
 
-    dec_fac = int(Fs/(4*115))
+#     dec_fac = int(Fs/(4*115))
 
-    wfdat = np.roll(d, -idx)[:ll][::dec_fac]
+#     wfdat = np.roll(d, -idx)[:ll][::dec_fac]
 
-    chi_neg = np.sum( (wfdat + a*chi2tempf[::dec_fac])**2 )
-    chi_pos = np.sum( (wfdat - a*chi2tempf[::dec_fac])**2 )
+#     chi_neg = np.sum( (wfdat + a*chi2tempf[::dec_fac])**2 )
+#     chi_pos = np.sum( (wfdat - a*chi2tempf[::dec_fac])**2 )
     
-    if(False and a > 5):
-        plt.figure()
-        npts = len(d)
-        tvec = np.linspace(0, (npts-1)/Fs, npts)
-        #plt.plot( tvec[::dec_fac], d[::dec_fac], 'k' )
-        plt.plot( tvec[idx:(idx+ll)][::dec_fac], d[idx:(idx+ll)][::dec_fac], 'bo' )
-        if( chi_neg < chi_pos ):
-            plt.plot( tvec[idx:(idx+ll)], -chi2tempf*a, 'r' )
-        else:
-            plt.plot( tvec[idx:(idx+ll)], chi2tempf*a, 'r' )
-        plt.show()
+#     if(False and a > 5):
+#         plt.figure()
+#         npts = len(d)
+#         tvec = np.linspace(0, (npts-1)/Fs, npts)
+#         #plt.plot( tvec[::dec_fac], d[::dec_fac], 'k' )
+#         plt.plot( tvec[idx:(idx+ll)][::dec_fac], d[idx:(idx+ll)][::dec_fac], 'bo' )
+#         if( chi_neg < chi_pos ):
+#             plt.plot( tvec[idx:(idx+ll)], -chi2tempf*a, 'r' )
+#         else:
+#             plt.plot( tvec[idx:(idx+ll)], chi2tempf*a, 'r' )
+#         plt.show()
 
-    return np.min( (chi_neg, chi_pos) )
+#     return np.min( (chi_neg, chi_pos) )
 
 #s = np.fft.rfft(tempt)
 #norm = np.sum( np.abs(s)**2 )
@@ -170,9 +170,9 @@ if(repro):
         #print(npts)
         tvec = np.linspace(0, (npts-1)/Fs, npts)
 
-        if(fi == 1):
-            oldi_psd, oldi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
-            oldo_psd, oldo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))
+        # if(fi == 1):
+        #     oldi_psd, oldi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
+        #     oldo_psd, oldo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))
         
         indat = dat[:,0]*vtom_in/ecilist[fi]
         indat -= np.mean(indat)
@@ -536,7 +536,7 @@ plt.plot(xx, np.polyval(pout, xx), 'r')
 chi2_cut = np.logical_and( joint_peaks[:,3] < np.polyval(pin, joint_peaks[:,1]), joint_peaks[:,4] < np.polyval(pout, joint_peaks[:,2]))
 
 
-## apply energy calibration
+## apply energy calibration (accounts for search bias) -- fix hardcoded parameters
 ebpc = [ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
 def cfit(x,A,mu,sig):
     return x + A*(1+erf((mu-x)/sig))
@@ -551,6 +551,7 @@ c_xx = cfit(e_xx, *ebpc)
 e_cal = np.interp( e_orig, c_xx, e_xx)
 
 
+## make plot of points passing all cuts
 plt.figure()
 plt.plot(joint_peaks[:,0], joint_peaks[:,1], 'k.', ms=3, label='all')
 plt.plot(joint_peaks[gpts,0], joint_peaks[gpts,1], 'c.', ms=3, label='pass in/out coinc')

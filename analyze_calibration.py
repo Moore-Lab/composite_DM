@@ -16,8 +16,8 @@ Fs = 1e4
 mass = 9.4e-13 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
-tthr = 0.050 ## time threshold in s
-repro = True
+tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
+repro = True # Set true to reprocess data, false to read from file
 
 data_list = ["data/20200615_to/kick/0.1ms/0.1V",
              "data/20200615_to/kick/0.1ms/0.2V",
@@ -137,29 +137,29 @@ tempt = sp.filtfilt(b,a,tempt)
 #chi2pts = np.logical_and( tt >= 0, tt<1.5/gam) 
 #chi2tempf = tempf[chi2pts]*normf/SI_to_GeV
 
-def get_chi2(a, d, idx):
-    ll = len(chi2tempf)
+# def get_chi2(a, d, idx):
+#     ll = len(chi2tempf)
 
-    dec_fac = 1 #int(Fs/(4*115))
+#     dec_fac = 1 #int(Fs/(4*115))
 
-    wfdat = np.roll(d, -idx)[:ll][::dec_fac]
+#     wfdat = np.roll(d, -idx)[:ll][::dec_fac]
 
-    chi_neg = np.sum( (wfdat + a*chi2tempf[::dec_fac])**2 )
-    chi_pos = np.sum( (wfdat - a*chi2tempf[::dec_fac])**2 )
+#     chi_neg = np.sum( (wfdat + a*chi2tempf[::dec_fac])**2 )
+#     chi_pos = np.sum( (wfdat - a*chi2tempf[::dec_fac])**2 )
     
-    if(True):
-        plt.figure()
-        npts = len(d)
-        tvec = np.linspace(0, (npts-1)/Fs, npts)
-        #plt.plot( tvec[::dec_fac], d[::dec_fac], 'k' )
-        plt.plot( tvec[idx:(idx+ll)][::dec_fac], d[idx:(idx+ll)][::dec_fac], 'bo' )
-        if( chi_neg < chi_pos ):
-            plt.plot( tvec[idx:(idx+ll)], -chi2tempf*a, 'r' )
-        else:
-            plt.plot( tvec[idx:(idx+ll)], chi2tempf*a, 'r' )
-        plt.show()
+#     if(True):
+#         plt.figure()
+#         npts = len(d)
+#         tvec = np.linspace(0, (npts-1)/Fs, npts)
+#         #plt.plot( tvec[::dec_fac], d[::dec_fac], 'k' )
+#         plt.plot( tvec[idx:(idx+ll)][::dec_fac], d[idx:(idx+ll)][::dec_fac], 'bo' )
+#         if( chi_neg < chi_pos ):
+#             plt.plot( tvec[idx:(idx+ll)], -chi2tempf*a, 'r' )
+#         else:
+#             plt.plot( tvec[idx:(idx+ll)], chi2tempf*a, 'r' )
+#         plt.show()
 
-    return np.min( (chi_neg, chi_pos) )
+#     return np.min( (chi_neg, chi_pos) )
 
 #s = np.fft.rfft(tempt)
 #norm = np.sum( np.abs(s)**2 )
@@ -204,9 +204,9 @@ if(repro):
         #print(npts)
         tvec = np.linspace(0, (npts-1)/Fs, npts)
 
-        if(fi == 1):
-            oldi_psd, oldi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
-            oldo_psd, oldo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))
+        # if(fi == 1):
+        #     oldi_psd, oldi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
+        #     oldo_psd, oldo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))
         
         indat = dat[:,0]*vtom_in
         indat -= np.mean(indat)
@@ -225,9 +225,7 @@ if(repro):
         outdatf2_outband = np.std(sp.filtfilt(bstop2,astop2,sp.filtfilt(bstop,astop,outdat)))
         
         incorr = sp.correlate(indatf, tempf, mode='same')
-        #incorr = sp.correlate(indatf, tempf, mode='valid')
         outcorr = sp.correlate(outdatf, tempf, mode='same')
-        #outcorr = sp.correlate(outdatf, tempf, mode='valid')
 
         ## now the local maxima
         incorrf = sp.filtfilt(b2,a2,np.sqrt(incorr**2))
@@ -238,6 +236,8 @@ if(repro):
         # plt.plot(tvec, outdatf)
         # plt.plot(tvec, accdatf/10)
 
+        ## fudge factor of 1.1 accounts for amplitude loss in filter frequency for finding envelope
+        ## don't worry about the fudge factor, it's fine...
         incorrf *= 1.1*np.sqrt(2)*SI_to_GeV
         outcorrf *= 1.1*np.sqrt(2)*SI_to_GeV
         inpeaks_orig = sp.find_peaks(incorrf)[0]
@@ -247,6 +247,7 @@ if(repro):
         inpeaks = np.zeros_like(inpeaks_orig)
         outpeaks = np.zeros_like(outpeaks_orig)        
 
+        ## 2 ms shouldn't be hardcoded -- depends on the period of the oscillation (sphere res frequency)
         naround = int(Fs * 0.002)
         for j,ip in enumerate(inpeaks_orig):
             if( ip<500 or ip>npts-500 ):
@@ -261,21 +262,25 @@ if(repro):
         
         ## now step through the calibration spikes and look for peaks
         mon = dat[:,3]
+        ## pstart gives time of the spikes in the monitor signal
         pstart = np.argwhere( np.logical_and(mon<0.1, np.roll(mon,-1)>=0.05) ).flatten()
 
         pspace = pstart[1]-pstart[0]
+        ## keep track of random coincidences
         random_cts_in = 0
         random_cts_out = 0
+        ## skip beginning and end of files to prevent edge effects (maybe revisit if this is long enough??)
         for ip in pstart:
             if( ip<500 or ip>npts-500): continue
             time_diffs_ip = tvec[inpeaks] - tvec[ip]
             time_diffs_op = tvec[outpeaks] - tvec[ip]
 
+            ##### in loop sensor only
             ## find the largest peak within the cal window for each
             if(np.any(np.abs(time_diffs_ip) < tthr)):
                 ip_peakvals = np.abs(incorr[inpeaks][np.abs(time_diffs_ip) < tthr])*SI_to_GeV
                 ip_peaktimes = time_diffs_ip[np.abs(time_diffs_ip) < tthr]
-                ipp, ipt = np.max(ip_peakvals), ip_peaktimes[ np.argmax(ip_peakvals) ]
+                ipp, ipt = np.max(ip_peakvals), ip_peaktimes[ np.argmax(ip_peakvals) ] #amplitude and time of pulse
 
                 ## now get the chi2 to the pulse template
                 ip_s = inpeaks[np.abs(time_diffs_ip) < tthr][ np.argmax(ip_peakvals) ]
@@ -295,7 +300,10 @@ if(repro):
                     
             else:
                 ipp, ipt, ichi2 = -1, -1, 1e20
-            
+
+            ### done with inloop
+
+            ##outloop sensor only
             if(np.any(np.abs(time_diffs_op) < tthr)):
                 op_peakvals = np.abs(outcorr[outpeaks][np.abs(time_diffs_op) < tthr])*SI_to_GeV
                 op_peaktimes = time_diffs_op[np.abs(time_diffs_op) < tthr]
@@ -319,20 +327,23 @@ if(repro):
                 
             else:
                 opp, opt, ochi2 = -1, -1, 1e20
+            ### done with outloop
 
+            ## variables: time in seconds of event, inloop amp, inloop time, outloop amp, outloop time, calibration voltage, inloop chi2, outloop chi2
             joint_peaks.append( [file_offset+tvec[ip], ipp, ipt, opp, opt, volts, ichi2, ochi2] )
             #print( joint_peaks[-1] )
             
-            time_diffs_ip = tvec[inpeaks] - tvec[(ip+pspace)%npts]
-            time_diffs_op = tvec[outpeaks] - tvec[(ip+pspace)%npts]
-            if(np.any(np.abs(time_diffs_ip) < tthr)):
-                random_cts_in += 1
-            if(np.any(np.abs(time_diffs_op) < tthr)):
-                random_cts_out += 1
+            # time_diffs_ip = tvec[inpeaks] - tvec[(ip+pspace)%npts]
+            # time_diffs_op = tvec[outpeaks] - tvec[(ip+pspace)%npts]
+            # if(np.any(np.abs(time_diffs_ip) < tthr)):
+            #     random_cts_in += 1
+            # if(np.any(np.abs(time_diffs_op) < tthr)):
+            #     random_cts_out += 1
             
         file_offset += npts/Fs
-        rand_cts.append( [random_cts_in, random_cts_out, volts] )
-        
+        #rand_cts.append( [random_cts_in, random_cts_out, volts] )
+
+        ## plot waveforms for debugging only
         if( False ): # and np.any( incorrf[inpeaks] > 1.5 ) ):
             plt.figure()
             plt.plot(tvec, np.abs(incorr)*SI_to_GeV)
@@ -400,6 +411,10 @@ else:
 # plt.plot( joint_peaks[:,-1], joint_peaks[:,1], 'k.')
 # plt.plot( joint_peaks[:,-1], joint_peaks[:,3], 'r.')
 
+
+
+### analyze the calibration data to find amplitude calibration, cut efficiency, etc:
+
 vlist = np.array([0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4])
 eff_list = np.zeros((len(vlist),6))
 mean_list = np.zeros((len(vlist),4))
@@ -411,11 +426,14 @@ def ffn(x,A,mu,sig,C):
 
 cols = get_color_map(len(vlist))
 
+## list of kicks in GeV/c (what we expect)
 gev_list = 200*vlist*1e-4/(0.0033)*(1.6e-19) * SI_to_GeV
+
 for i,v in enumerate(vlist):
     print("Working on volts: ", v)
     cdat = joint_peaks[joint_peaks[:,5] == v, :]
 
+    ## get the mean value for each voltage of the kick amplitude (before final calibration)
     tot_cts = len(cdat[:,1])
     gpts1 = cdat[:,1] > 0
     gpts2 = cdat[:,3] > 0
@@ -425,11 +443,10 @@ for i,v in enumerate(vlist):
 
     good_cts_in, good_cts_out = np.sum( cdat[:,1] >0), np.sum( cdat[:,3] >0)
 
+
+    ## find trigger efficiency and random coincident rate (in loop)
     plt.figure(fig_in.number)
-    if(v < 5):
-        hh, be = np.histogram( cdat[:,2], range=(-tthr,tthr), bins=50 )
-    else:
-        hh, be = np.histogram( cdat[:,2], range=(-tthr,tthr), bins=50 )        
+    hh, be = np.histogram( cdat[:,2], range=(-tthr,tthr), bins=50 )
     bc = be[:-1]+np.diff(be)/2
     blpts = np.logical_or(bc < -0.02, bc > 0.02)
     baseline = np.mean(hh[blpts])
@@ -445,12 +462,10 @@ for i,v in enumerate(vlist):
     corr_fac = np.trapz( ffn(xx, *[bp[0],bp[1],bp[2],0]), xx )/np.trapz( ffn(xx, *bp ),xx)
     good_cts_in = np.sum( hh[np.logical_not(blpts)]-baseline )
 
-    
+
+    ## find trigger efficiency and random coincident rate (out loop)
     plt.figure(fig_out.number)
-    if(v < 5):
-        hh, be = np.histogram( cdat[:,4], range=(-tthr,tthr), bins=50 )
-    else:
-        hh, be = np.histogram( cdat[:,4], range=(-tthr,tthr), bins=50 )        
+    hh, be = np.histogram( cdat[:,4], range=(-tthr,tthr), bins=50 )
     bc = be[:-1]+np.diff(be)/2
     blpts = np.logical_or(bc < -0.02, bc > 0.02)
     baseline = np.mean(hh[blpts])
@@ -478,7 +493,9 @@ for i,v in enumerate(vlist):
     
 plt.legend()
 #plt.show()
-    
+
+
+## find the calibration to the pulse amplitude
 plt.figure()
 corr_fac_in = np.mean( mean_list[-3:,0]/gev_list[-3:] )
 corr_fac_out = np.mean( mean_list[-3:,1]/gev_list[-3:] )
@@ -496,6 +513,8 @@ plt.title("Corr fac inloop: %.2f, corr fac outloop: %.2f"%(corr_fac_in, corr_fac
 plt.xlabel("Calibration pulse amplitude [GeV]")
 plt.ylabel("Recontructed amplitude")
 
+
+## fit calibraion to get search bias at low energy
 ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=[0.1,1,1])
 #ecbp = [0.1,1,1]
 plt.plot( xx, cfit(xx, *ecbp), 'k')
@@ -506,6 +525,7 @@ print("Energy cal params: ", ecbp)
 cbp, cbc = curve_fit(cfit, joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out, p0=[0.1,1,1])
 #cbp = [0.1,1,1]
 
+## calculate the efficiency of the in/out loop amplitude matching criterion
 plt.figure()
 xvals, yvals = joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out
 plt.plot( xvals, yvals, 'k.', ms=1)
@@ -522,6 +542,7 @@ print("Sigma: ", sigval)
 
 plt.xlabel("Reconstructed in loop amp [GeV]")
 plt.ylabel("Reconstructed out of loop amp [GeV]")
+
 
 
 def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
@@ -549,6 +570,9 @@ plt.ylabel("Reconstruction efficiency")
 plt.legend()
 
 print("In loop recon eff params: ", bpi)
+
+#### done calculating in/out loop amplitude matching efficiency
+
 
 
 ## finally, make the chi2 cut:
