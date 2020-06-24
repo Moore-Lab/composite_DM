@@ -17,7 +17,7 @@ mass = 9.4e-13 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s
-repro = False
+repro = True
 
 data_list = ["data/20200615_to/kick/0.1ms/0.1V",
              "data/20200615_to/kick/0.1ms/0.2V",
@@ -26,6 +26,22 @@ data_list = ["data/20200615_to/kick/0.1ms/0.1V",
              "data/20200615_to/kick/0.1ms/1.6V",
              "data/20200615_to/kick/0.1ms/3.2V",
              "data/20200615_to/kick/0.1ms/6.4V"]
+
+# data_list = ["data/20200619/kick/0.1ms/0.1V",
+#              "data/20200619/kick/0.1ms/0.2V",
+#              "data/20200619/kick/0.1ms/0.4V",
+#              "data/20200619/kick/0.1ms/0.8V",
+#              "data/20200619/kick/0.1ms/1.6V",
+#              "data/20200619/kick/0.1ms/3.2V",
+#              "data/20200619/kick/0.1ms/6.4V"]
+
+# data_list = ["data/20200619/kick/0.1ms/0.1V",
+#              "data/20200619/kick/0.1ms/0.2V",
+#              "data/20200619/kick/0.1ms/0.4V",
+#              "data/20200619/kick/0.1ms/0.8V",
+#              "data/20200619/kick/0.1ms/1.6V",
+#              "data/20200619/kick/0.1ms/3.2V",
+#              "data/20200619/kick/0.1ms/6.4V"]
 
 def get_color_map( n ):
     jet = plt.get_cmap('jet') 
@@ -115,7 +131,7 @@ bstop2,astop2 = sp.butter(3, 400./(Fs/2), btype='lowpass')
 
 #tt = np.arange(-flen/(2*Fs), flen/(2*Fs), 1./Fs)
 tt = np.arange(-1.5/gam, 1.5/gam, 1./Fs)
-tempt = make_template(Fs, f0, gam, 0.5*11.6/SI_to_GeV, mass)[0]
+tempt = make_template(Fs, f0, gam, 11.6/SI_to_GeV, mass)[0]
 tempt = sp.filtfilt(b,a,tempt)
 
 #chi2pts = np.logical_and( tt >= 0, tt<1.5/gam) 
@@ -268,7 +284,7 @@ if(repro):
                 ichi2b = np.sum( (pdat + tempf*ipp*normf/SI_to_GeV)**2 )
                 ichi2 = np.min([ichi2a, ichi2b])
                 
-                if(True):
+                if(False):
                     plt.close('all')
 
                     plt.figure()
@@ -305,7 +321,7 @@ if(repro):
                 opp, opt, ochi2 = -1, -1, 1e20
 
             joint_peaks.append( [file_offset+tvec[ip], ipp, ipt, opp, opt, volts, ichi2, ochi2] )
-            print( joint_peaks[-1] )
+            #print( joint_peaks[-1] )
             
             time_diffs_ip = tvec[inpeaks] - tvec[(ip+pspace)%npts]
             time_diffs_op = tvec[outpeaks] - tvec[(ip+pspace)%npts]
@@ -346,8 +362,8 @@ if(repro):
             nstack = 0
             for p in pstart:
                 if(p+480 > npts): break
-                stackdati += indat[(p-200):(p+480)]
-                stackdato += outdat[(p-200):(p+480)]
+                stackdati += indatf[(p-200):(p+480)]
+                stackdato += outdatf[(p-200):(p+480)]
                 nstack += 1
             stackdati /= nstack
             stackdato /= nstack

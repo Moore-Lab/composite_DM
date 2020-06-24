@@ -14,9 +14,11 @@ flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
 repro = False
+remake_coinc_cut = False
 
-data_list = ["data/DM_20200615","data/DM_20200618"]
-#data_list = ["data/20200615_to/kick/0.1ms/6.4V",]
+data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619"]
+eng_cal_in = [1.04, 1.04, 1.04]
+eng_cal_out = [1.05, 1.05, 1.12]
 
 def getdata(fname, gain_error=1.0):
     ### Get bead data from a file.  Guesses whether it's a text file
@@ -73,10 +75,11 @@ def make_template(Fs, f0, gamma_total, dp, Mass):
 
 #vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("data")
 vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("data/20200615_to/calibration1e_HiZ_20200615")
+print("f0: ",f0)
 
 ## fix cal for now
-vtom_in *= np.sqrt(2)/1.04
-vtom_out *= np.sqrt(2)/1.05
+vtom_in *= np.sqrt(2) ##/1.04
+vtom_out *= np.sqrt(2) ##/1.05
 
 gam = get_gammas("data")
 temp = make_template(Fs, f0, gam, 1, mass)
@@ -140,11 +143,15 @@ def get_chi2(a, d, idx):
 print(vtom_in, vtom_out, f0, gam )
 
 flist = []
-for d in data_list:
+ecilist = []
+ecolist = []
+for eci, eco, d in zip(eng_cal_in, eng_cal_out, data_list):
     f = sorted(glob.glob(d + "/*.h5"), key=get_num)
     for ff in f:
         flist.append(ff)
-
+        ecilist.append(eci)
+        ecolist.append(eco)
+        
 if(repro):
     ## now load each file and process the data for kicks
     joint_peaks = []
@@ -167,9 +174,9 @@ if(repro):
             oldi_psd, oldi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
             oldo_psd, oldo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))
         
-        indat = dat[:,0]*vtom_in
+        indat = dat[:,0]*vtom_in/ecilist[fi]
         indat -= np.mean(indat)
-        outdat = dat[:,4]*vtom_out
+        outdat = dat[:,4]*vtom_out/ecolist[fi]
         outdat -= np.mean(outdat)
         accdat = dat[:,5]*1e-7
         accdat -= np.mean(accdat)
@@ -314,11 +321,12 @@ for acol in accel_cols:
     plt.figure()
     plt.errorbar( bac, ha, yerr=np.sqrt(ha), fmt='k.')
     mu = bac[np.argmax(ha)]
-    sig = 0.1*mu
+    sig = 0.5*mu
     yerrs=np.sqrt(ha)
     yerrs[0] = 1
-    fpts = ha > 0.05*np.max(ha)
-    bap, bacov = curve_fit( gauss_fit, bac[fpts], ha[fpts], sigma=yerrs[fpts], p0=[1e5, mu, sig])
+    fpts = ha > 0.2*np.max(ha)
+    bap, bacov = curve_fit( gauss_fit, bac[fpts], ha[fpts], sigma=yerrs[fpts], p0=[5e6, mu, sig])
+    #bap = [5e6, mu, sig]
     bb = np.linspace(bac[0], bac[-1], 1e3)
     plt.plot( bb, gauss_fit(bb, *bap), 'r')
     cut_val = bap[1] + 2.5*np.abs(bap[2])
@@ -327,7 +335,7 @@ for acol in accel_cols:
 
     accel_cut = np.logical_or( accel_cut,  joint_peaks[:,acol]>cut_val )
 
-
+    
 #plt.figure()
 #hh, xbe, ybe = np.histogram2d( joint_peaks[:,1], joint_peaks[:,3], bins=(xe,ye) )
 #plt.pcolormesh(xbe, ybe, np.log10(hh.T), cmap='Greys', vmin=0, vmax=2)
@@ -370,13 +378,14 @@ print("Exposure: ", exposure)
 
 # plt.figure()
 # plt.plot( joint_peaks[:,1], joint_peaks[:,2], 'k.', label='all data', ms=2)
-# plt.plot( joint_peaks[bad_times,1], joint_peaks[bad_times,2], 'r.', label='high rate times', ms=2)
+# #plt.plot( joint_peaks[bad_times,1], joint_peaks[bad_times,2], 'r.', label='high rate times', ms=2)
 # plt.plot( joint_peaks[gpts,1], joint_peaks[gpts,2], 'b.', label='passing cuts', ms=4)
 # plt.legend()
 # plt.xlim([0,10])
 # plt.ylim([0,10])
 # plt.xlabel("In loop reconstructed momentum [GeV]")
 # plt.ylabel("Out of loop reconstructed momentum [GeV]")
+# plt.show()
 
 #plt.close('all')
 
@@ -418,9 +427,13 @@ lab_entry = [ #[dt.datetime(2020,6,8,9,10,0), dt.datetime(2020,6,8,16,47,0), "Fe
               [dt.datetime(2020,6,17,10,0,0), dt.datetime(2020,6,17,11,20,0), "Fernando"],
               [dt.datetime(2020,6,17,15,45,0), dt.datetime(2020,6,17,17,0,0), "Gadi"],
               [dt.datetime(2020,6,18,14,40,0), dt.datetime(2020,6,18,19,30,0), "Gadi"],
+              #[dt.datetime(2020,6,19,1,0,0), dt.datetime(2020,6,19,5,0,0), "??"],
+              [dt.datetime(2020,6,19,10,0,0), dt.datetime(2020,6,19,15,5,0), "Gadi"],
+              [dt.datetime(2020,6,19,15,20,0), dt.datetime(2020,6,19,16,20,0), "Fernando"],
+              [dt.datetime(2020,6,21,16,0,0), dt.datetime(2020,6,21,17,6,0), "Fernando"],
               ]
 
-plt.plot_date(npd, joint_peaks[:,1], 'k.', ms=2, label='all data')
+plt.plot_date(npd[::10], joint_peaks[::10,1], 'k.', ms=2, label='all data')
 #plt.plot_date(npd[bad_times], joint_peaks[bad_times,1], 'r.', ms=2, label='high rate')
 yy = plt.ylim()
 for ll in lab_entry:
@@ -451,27 +464,42 @@ time_list = joint_peaks[:,0]
 time_peaks = time_list[high_peaks]
 bad_times = np.zeros_like(joint_peaks[:,0]) > 1
 
-last_t2 = 0
-for tp in time_peaks:
+if(remake_coinc_cut):
+    last_t2 = 0
+    print("Working on %d peaks:"%len(time_peaks))
+    for titer,tp in enumerate(time_peaks):
 
-    if(tp < last_t2): continue
+        if(titer % 5000 == 0): print(titer)
+
+        if(tp < last_t2): continue
+
+        ## as a double check, make sure we are past the last window
+        if( tp-last_t2 < 1.0):
+            t1 = last_t2
+            t2 = tp + 0.1
+            bad_times = np.logical_or( bad_times, np.logical_and( time_list >= t1, time_list<=t2 ) )
+            last_t2 = t2
+            exposure -= (t2-t1)
+            continue
+            
+        time_diffs = np.abs(time_peaks - tp)
+        coinc_peaks = np.argwhere( np.logical_and( time_diffs > 0, time_diffs<1.001 ) ).flatten()
+        if( len(coinc_peaks) > 0 ):
+            t1 = tp - 0.1
+            t2 = time_peaks[coinc_peaks[-1]] + 0.1
+            bad_times = np.logical_or( bad_times, np.logical_and( time_list >= t1, time_list<=t2 ) )
+            last_t2 = t2
+            exposure -= (t2-t1)
+
+    gpts2 = np.logical_not(bad_times)
+    np.savez("coinc_cut.npz", exposure=exposure, gpts2=gpts2)
+else:
+    ss = np.load("coinc_cut.npz")
+    exposure = ss['exposure']
+    gpts2 = ss['gpts2']
+    bad_times = np.logical_not(gpts2)
     
-    time_diffs = np.abs(time_peaks - tp)
-    coinc_peaks = np.argwhere( np.logical_and( time_diffs > 0, time_diffs<1.001 ) ).flatten()
-    if( len(coinc_peaks) > 0 ):
-        t1 = tp - 0.1
-        t2 = time_peaks[coinc_peaks[-1]] + 0.1
-        bad_times = np.logical_or( bad_times, np.logical_and( time_list >= t1, time_list<=t2 ) )
-        last_t2 = t2
-        exposure -= (t2-t1)
 
-gpts2 = np.logical_not(bad_times)
-
-plt.figure()
-plt.plot(joint_peaks[:,0], joint_peaks[:,1], 'k.', ms=3)
-plt.plot(joint_peaks[gpts,0], joint_peaks[gpts,1], 'r.', ms=3)
-plt.plot(joint_peaks[bad_times,0], joint_peaks[bad_times,1], 'b.', ms=3)
-plt.plot(joint_peaks[accel_cut,0], joint_peaks[accel_cut,1], 'g.', ms=3)
 
 print("Exposure after 1s cut: ", exposure)
 print("1s cut exposure loss: ", exposure/curr_exposure)
@@ -497,13 +525,13 @@ binlist = np.linspace(0,10,2e2)
 xx = np.linspace(0,10, 1000)
 pin = [0.2e-18, 0, 2.5e-17]
 pout = [0.2e-18, 0, 5e-17]
-# plt.figure()
-# plt.plot( joint_peaks[gpts,1], joint_peaks[gpts,3], 'k.', ms=1)
-# plt.plot(xx, np.polyval(pin, xx), 'r')
+plt.figure()
+plt.plot( joint_peaks[gpts,1], joint_peaks[gpts,3], 'k.', ms=1)
+plt.plot(xx, np.polyval(pin, xx), 'r')
 
-# plt.figure()
-# plt.plot( joint_peaks[gpts,2], joint_peaks[gpts,4], 'k.', ms=1)
-# plt.plot(xx, np.polyval(pout, xx), 'r')
+plt.figure()
+plt.plot( joint_peaks[gpts,2], joint_peaks[gpts,4], 'k.', ms=1)
+plt.plot(xx, np.polyval(pout, xx), 'r')
 
 chi2_cut = np.logical_and( joint_peaks[:,3] < np.polyval(pin, joint_peaks[:,1]), joint_peaks[:,4] < np.polyval(pout, joint_peaks[:,2]))
 
@@ -522,6 +550,15 @@ c_xx = cfit(e_xx, *ebpc)
 # plt.show()
 e_cal = np.interp( e_orig, c_xx, e_xx)
 
+
+plt.figure()
+plt.plot(joint_peaks[:,0], joint_peaks[:,1], 'k.', ms=3, label='all')
+plt.plot(joint_peaks[gpts,0], joint_peaks[gpts,1], 'c.', ms=3, label='pass in/out coinc')
+plt.plot(joint_peaks[bad_times,0], joint_peaks[bad_times,1], 'b.', ms=3, label='fail 1s coinc')
+plt.plot(joint_peaks[accel_cut,0], joint_peaks[accel_cut,1], 'g.', ms=3, label='fail accel cut')
+
+
+
 gpts = np.logical_and(gpts, np.logical_not(lab_cut))
 
 orig_gpts = gpts
@@ -533,6 +570,9 @@ print("eff after chi2: ", np.sum(gpts)/len(gpts))
 accel_cut_comp_gpts = gpts
 gpts = np.logical_and( gpts, np.logical_not(accel_cut) )
 print("Accel cut efficiency: ", np.sum(gpts)/np.sum(accel_cut_comp_gpts))
+
+plt.plot(joint_peaks[gpts,0], joint_peaks[gpts,1], 'r.', ms=3, label='pass all')
+plt.legend()
 
 final_eff = np.sum(gpts)/np.sum(orig_gpts)
 print("Final cut efficiency: ", final_eff)
@@ -558,7 +598,7 @@ plt.figure()
 plt.errorbar( bc, hh2/s_to_day, yerr=np.sqrt(hh2)/s_to_day, fmt='k.')
 #plt.plot(xx, total_fit(xx, *bp), 'k')
 plt.yscale('log')
-plt.xlim([0,5])
+plt.xlim([0,10])
 plt.ylim((0.1, 3e5))
 plt.xlabel("dp [GeV]")
 plt.ylabel("counts/(%.2f GeV day)"%bs)
