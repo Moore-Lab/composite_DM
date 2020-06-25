@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.special import erf
 
-m_phi = 5e-1
+m_phi = 0 ##5e-4
 
 o = open("drdq_interp_grace_%.2e.pkl"%m_phi, 'rb')
 fdict = pickle.load(o)
@@ -76,10 +76,10 @@ mx_list = sorted(fdict.keys())
 limits = np.zeros_like(mx_list)
 
 def gauss_fit(x, A, mu, sig):
-    return A*np.exp( -(x-mu)**2/(2*sig**2) )
+    return np.abs(A)*np.exp( -(x-mu)**2/(2*sig**2) )
 
 def log_gauss_fit(x, A, mu, sig):
-    return A/x*np.exp( -(np.log(x)-mu)**2/(2*sig**2) )
+    return np.abs(A)/x*np.exp( -(np.log(x)-mu)**2/(2*sig**2) )
 
 def total_fit(x,A1,mu1,sig1,A2,mu2,sig2):
     return gauss_fit(x,A1,mu1,sig1) + log_gauss_fit(x,A2,mu2,sig2)
@@ -93,9 +93,9 @@ eff_corr_vec = ffnerf( bc, *in_loop_eff_pars)
 ysig = np.sqrt(h)
 ysig[ysig==0] = 1
 cts_per_day = Exposuretime/(24*3600.)
-spars = [40000/cts_per_day, 0, 0.35, 80/cts_per_day, 1e-3, 0.2]
+spars = [40000/cts_per_day, 0, 0.35] # 80/cts_per_day, 1e-3, 0.2]
 fpts = np.logical_and(bc>0.07,bc<1.2)
-bp, bcov = opt.curve_fit( total_fit, bc[fpts], h[fpts]/cts_per_day, sigma=ysig[fpts]/cts_per_day, p0=spars, maxfev=100000 ) 
+bp, bcov = opt.curve_fit( gauss_fit, bc[fpts], h[fpts]/cts_per_day, sigma=ysig[fpts]/cts_per_day, p0=spars, maxfev=100000 ) 
 #bp = spars
 print(bp)
 
@@ -108,22 +108,19 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     
     plt.figure()
     plt.errorbar(bc, h/cts_per_day, yerr = sigma/cts_per_day, fmt = "k.")#, color = "#7c1ee9")
-    plt.plot(xx, total_fit(xx, *bp), 'k')
+    plt.plot(xx, gauss_fit(xx, *bp), 'k')
 
     plt.yscale('log')
     plt.xlim([0,5])
     plt.ylim((0.1, 3e5))
-
     #plt.show()
     
-    alpha_vec = np.logspace(-10, -4, 80)
+    alpha_vec = np.logspace(-11, -4, 80)
     
     #qq = np.linspace(bc[0]-binsize/2, 10, 1e6)
     qq = np.linspace(0,20,1e6)
     bedges = bc-binsize/2
     bedges = np.hstack((bedges, bc[-1]+binsize/2))
-
-
 
     cols = get_color_map(len(alpha_vec))
 
@@ -178,7 +175,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         for i in range(len(bc)):
             gidx = np.logical_and(qq>=bedges[i], qq<bedges[i+1])
             dm_vec[i] = np.trapz( dm_rate[gidx], qq[gidx] ) * Exposuretime/3600. 
-            bg_vec[i] = total_fit(bc[i], *bp)*cts_per_day
+            bg_vec[i] = gauss_fit(bc[i], *bp)*cts_per_day
             #bg_vec[i] = gauss2(bc[i],*popt)
 
         ## eff corr
@@ -192,7 +189,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             plt.semilogy( bc, bg_vec, 'r.')
             plt.show()
             
-        bg_vec[bg_vec == 0] = 1e-20 ## slighly non-zero value so log doesn't choke
+        #bg_vec[bg_vec == 0] = 1e-20 ## slighly non-zero value so log doesn't choke
         logL_vec[j], best_ga = logL( dm_vec, h, bg_vec )
         #print(best_ga)
         
@@ -202,6 +199,9 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             plt.plot( bc, (dm_vec + best_ga*bg_vec)/cts_per_day, color = cols[j])
         
         print(logL_vec[j])
+        if( np.isnan(logL_vec[j]) ):
+            print("Bad value, skipping mass")
+            break
         if( logL_vec[j]>best_logL+10):
             print("Found minimum")
             break

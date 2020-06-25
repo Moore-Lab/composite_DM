@@ -17,7 +17,7 @@ mass = 9.4e-13 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
-repro = True # Set true to reprocess data, false to read from file
+repro = False # Set true to reprocess data, false to read from file
 
 data_list = ["data/20200615_to/kick/0.1ms/0.1V",
              "data/20200615_to/kick/0.1ms/0.2V",
@@ -548,7 +548,8 @@ plt.ylabel("Reconstructed out of loop amp [GeV]")
 def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
     return A1*(1+erf((x-mu1)/(np.sqrt(2)*sig1)))/2 + A2*(1+erf((np.log(x)-mu2)/(np.sqrt(2)*sig2)))/2
 
-spars=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+#spars=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+spars = [ 0.70557531, 0.81466432, 0.31597654, 0.29442469, -1.07858784, 0.3547105 ]
 bpi, bci = curve_fit(ffnerf, gev_list, eff_list[:,0], sigma=(eff_list[:,1]+eff_list[:,2])/2, p0=spars)
 bpo, bco = curve_fit(ffnerf, gev_list, eff_list[:,3], sigma=(eff_list[:,4]+eff_list[:,5])/2, p0=spars)
 #bpi = spars
@@ -565,6 +566,9 @@ plt.plot(xx, ffnerf(xx, *bpi), 'k', label='in loop')
 plt.errorbar( gev_list, eff_list[:,3], yerr=(eff_list[:,4],eff_list[:,5]), fmt='r.')
 plt.plot(xx, ffnerf(xx, *bpo), 'r', label='out of loop')
 #plt.plot(xx, splo(xx), 'r')
+
+plt.plot(xx, ffnerf(xx, *bpi)*ffnerf(xx, *bpo), 'b', label='combined')
+
 plt.xlabel("Impulse amplitude [GeV]")
 plt.ylabel("Reconstruction efficiency")
 plt.legend()

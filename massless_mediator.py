@@ -5,17 +5,18 @@ import matplotlib.cm as cmx
 import matplotlib.colors as colors
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import interp2d
+from scipy.integrate import quad
 import pickle
 
 ## calculate dR/dq for a massless mediator
 
-mxlist = np.hstack((np.logspace(np.log10(25), 3, 20), np.logspace(3.1,9,20)))
+mxlist = [1e6,] #np.hstack((np.logspace(np.log10(25), 3, 20), np.logspace(3.1,9,20)))
 
 vesc = 1.835e-3 ## galactic escape velocity
 v0 = 7.34e-4 ## v0 parameter from Zurek group paper
 ve = 8.014e-4 ## ve parameter from Zurek group paper
 vmin = 1e-5
-nvels = 1000
+nvels = 10
 
 rhoDM = 0.4 # dark matter mass density, GeV/cm^3
 
@@ -50,19 +51,22 @@ def eta(vmin):
 
     return eta_out
 
-def integrand(x, beta, gamma):
-    print( (x**2 * (x**2 + beta - 1) - gamma)/(1 - beta + gamma/x**2 - x**2) )
-    input()
-    print( 1 - beta - 2*x**2 - 2*np.sqrt( x**4 + x**2 * (beta-1) - gamma ))
-    input()
-    return 1/(2*x) * np.sqrt((x**2 * (x**2 + beta - 1) - gamma)/(1 - beta + gamma/x**2 - x**2)) * np.log( 1 - beta - 2*x**2 - 2*np.sqrt( x**4 + x**2 * (beta-1) - gamma) )
+def integrand(b, k, R, E):
+    return np.sqrt(k + (b**2 * E/R) - E*R) * np.log(4*E*b**2 + R*(3*k-2*E*R) + 4*b*np.sqrt(E*R*(k + (b**2 * E/R) - E*R)))/(2*np.sqrt(-E*R*(1 - b**2/R**2 - k/(E*R))))
+    
 
 def theta( beta, gamma, sphedge ):
     int_bnd = -integrand(sphedge, beta, gamma)
     return np.pi/2 - int_bnd
 
-def xmax( beta, gamma ):
-    return np.sqrt( 0.5*(1 - beta + np.sqrt(1 - 2*beta + beta**2 + 4*gamma)) )
+def umax1( b, k, E, R):
+    return np.sqrt( 1/(2*b**2) - 3*k/(4*b**2 * E * R) + np.sqrt(8*b**2 * E * k * R**3 + (3*k*R**2 - 2*E*R**3)**2)/(4*b**2 * E * R**3) )
+
+def umax2( b, k, E, R):
+    return 0.5*np.sqrt(2/b**2 - 3*k/(b**2 * E * R) - np.sqrt(R**3 * (8*b**2 * E*k + 9*k**2 * R - 12*E*k*R**2 + 4*E**2 * R**3))/(b**2 * E * R**3))
+
+def nint( u, b, k, R, E):
+    return b/np.sqrt(1 - b**2 * u**2 - k/(2*R*E)*(3-1/(u*R)**2))
 
 prefac = alpha_n**2 * N_T**2
 
@@ -107,12 +111,14 @@ vel_list = np.linspace(vmin, vesc, nvels)
 # plt.ylabel("f(v)")
 # plt.show()
 
-bvec_cm = np.linspace(0,5e-4,1e3)
+bvec_cm = np.linspace(0,5e-4,2000)
 bvec = bvec_cm/hbarc
+
+bvec_cm_out = np.linspace(5e-4,20e-4,2000)
+bvec_out = bvec_cm_out/hbarc
 
 out_dict = {}
 for mx in mxlist:
-    print("Working on mass: ", mx)
     out_dat = np.zeros((len(aa),len(qq)))
 
     # ## plot q vs b
@@ -138,15 +144,22 @@ for mx in mxlist:
     # plt.show()
 
     #plt.figure()
+    q_orig = {}
+    q_out_orig = {}
     for aidx, alpha in enumerate(aa):
-
+        print("Working on mass, alpha: ", mx, alpha)
         nX = rhoDM/mx
         #vmins = qq/(2*mx)
         #dRdq = (N_T*alpha_n)**2/(2*np.pi)/qq**3 * nX * eta(vmins) * conv_fac
 
         dRdq = np.zeros(len(qq))
+        dRdq_in = np.zeros(len(qq))
         dRdq_mat = np.zeros((len(qq), nvels))
+        dRdq_in_mat = np.zeros((len(qq), nvels))
         for vidx, vel in enumerate(vel_list):
+
+            p = mx * vel
+            
             ## cross section outside the sphere
             sigvals = (N_T*alpha)**2 * (2*np.pi) * 1/qq**3 * 1/vel * f_halo(vel)
             Ecm = 0.5*mx*vel**2
@@ -156,26 +169,80 @@ for mx in mxlist:
             sigvals[qq > qmax] = 0
             dRdq_mat[:,vidx] = sigvals * nX * conv_fac
 
-            ##now inside
-            beta = 3*k/(2*Ecm*bmin)
-            gamma = k*bvec**2/(2*Ecm*bmin**3)
+            if(aidx == 0):
+                ##now inside
+                cint = integrand(bvec, k, bmin, Ecm)
+                numint = np.zeros_like(bvec)
+                for jj,cb in enumerate(bvec):
 
-            print(beta)
-            input()
-            print(gamma)
-            input()
+                    umaxval = umax1( cb, k, Ecm, bmin)
+                    ffn = lambda u: nint(u,cb,k,bmin,Ecm)
+                    ival = quad(ffn, 1/bmin, umaxval)
+                    numint[jj] = ival[0]
+
+                alp = k/(Ecm * bvec)
+                R = 1.0*bmin
+                anint = np.arctan( (alp + 2*bvec/R)/(2*np.sqrt(1-alp*bvec/R-(bvec/R)**2)) ) - np.arctan(alp/2)
+                theta = np.pi - 2*( numint + anint )
+
+                alp = k/(Ecm * bvec_out)
+                theta_out = 2*np.arcsin(alp/np.sqrt(4+alp**2))
+                alp = k/(Ecm * bvec)
+                theta_in_pt = 2*np.arcsin(alp/np.sqrt(4+alp**2))
+
+                q = p * np.sqrt(2 * (1-np.cos(theta)))
+                q_out = p * np.sqrt(2 * (1-np.cos(theta_out)))
+                q_in_pt = p * np.sqrt(2 * (1-np.cos(theta_in_pt)))
+
+                q_orig[vidx] = q
+                q_out_orig[vidx] = q_out
+
+                if(True):
+                    afac = (alpha/aa[0])
+                    gpts = np.logical_not(np.isnan(theta))
+                    plt.figure()
+                    plt.plot( bvec*hbarc*1e4, q, 'b')
+                    plt.plot( bvec_out*hbarc*1e4, q_out, 'b')
+                    plt.plot( bvec*hbarc*1e4, q_in_pt, "b:")
+                    plt.plot( bvec*hbarc*1e4, q_orig[vidx]*afac, 'r:')
+                    plt.plot( bvec_out*hbarc*1e4, q_out_orig[vidx]*afac, 'r:')
+                    plt.ylim([0, np.max(q[gpts])*2])
+                    plt.xlabel("Impact param, b [um]")
+                    plt.ylabel(r"Momentum transfer, q [GeV]")
+                    plt.title("Mass %.2e, alpha %.2e"%(mx,alpha))
+                    plt.savefig("massless_plots/m%.2e_a%.2e_v%.4e.pdf"%(mx,alpha,vel))
+                    plt.show()
+                
+            else:
+                afac = (alpha/aa[0])
+                q = q_orig[vidx] * afac
+                
+            gpts = np.logical_not(np.isnan(theta))
+            dbdq = np.abs(np.gradient( bvec[gpts], q[gpts] ))
             
-            xmax_vals = xmax(beta, gamma)
-            theta_vec = theta( beta, gamma, bvec/bmin )
+            maxpos = np.argmax(dbdq)
+            dsigdq1 = np.interp(qq, q[gpts][:maxpos], 2*np.pi*bvec[gpts][:maxpos]*dbdq[:maxpos], left=0, right=0)
+            dsigdq2 = np.interp(qq, q[gpts][maxpos:], 2*np.pi*bvec[gpts][maxpos:]*dbdq[maxpos:], left=0, right=0)
+            dsigdq_tot = dsigdq1 + dsigdq2
+
+            dRdq_in_mat[:,vidx] = dsigdq_tot * nX * conv_fac
             
-            plt.figure()
-            plt.plot( bvec, theta_vec)
-            plt.show()
+            #if(True):
+            #    plt.figure()
+            #    plt.plot( qq, dsigdq_tot*hbarc**2)
+            #    plt.show()
             
         for j in range( len(qq) ):
             dRdq[j] = np.trapz(dRdq_mat[j,:], vel_list)
+            dRdq_in[j] = np.trapz(dRdq_in_mat[j,:], vel_list)
 
-        dRdq = np.convolve(dRdq, gkern, mode='same')
+        if(True):
+            plt.figure()
+            plt.plot( qq, dRdq)
+            plt.plot( qq, dRdq_in)
+            plt.show()
+        
+        dRdq = np.convolve(dRdq+dRdq_in, gkern, mode='same')
         out_dat[aidx,:] = dRdq
 
         #fpts = qq > 2

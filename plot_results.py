@@ -8,7 +8,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import interp2d
 import pickle
 
-m_phi = 0
+m_phi = 5e-4 ##0
 
 def sortfun(s):
     a = float(s[46:57])
@@ -54,8 +54,13 @@ def get_color_map( n ):
 mxlist = np.logspace(1,8,42)
 
 out_dict = {}
-for mx in mxlist:
+for mx in [137382.0,]: #mxlist:
     print(mx)
+
+    if( np.abs(mx - 137382.0) > 1 ):
+        print("Skipping ", mx)
+        continue
+    
 
     fig=plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -70,6 +75,15 @@ for mx in mxlist:
     j=0
     for i, am in enumerate(amvec):
         if(not gidx[i]): continue
+
+        print( am[1] )
+        if( am[1] != 1e-10 ): continue
+        plt.close('all')
+        plt.figure()
+        cdat = np.interp(np.log10(qvals), np.log10(qvec[i,:]), sigvec[i,:])
+        plt.semilogy(qvals, cdat)
+        plt.show()
+        
         print(am[0])
         cdat = np.interp(np.log10(qvals), np.log10(qvec[i,:]), sigvec[i,:])
         ax.plot( np.log10(qvals), np.log10(np.ones_like(qvals)*am[1]), cdat, 'o', color=cmm[j])

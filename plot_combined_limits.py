@@ -4,7 +4,7 @@ from scipy.interpolate import UnivariateSpline as us
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 
-m_phi_list = [0.2, 5e-2, 2e-2, 5e-3, 5e-4]
+m_phi_list = [0.2, 5e-2, 2e-2, 5e-3, 5e-4,0]
 
 mchi = 1e-6 ## componenent mass, GeV
 
@@ -33,14 +33,14 @@ ff = np.load("fifth_force_limits.npz")
 
 for c,m in zip(cs, m_phi_list):
 
-    #if( False and m == 5e-2 ):
-    #    cdat = np.load("limit_plots_long/proj_data_%.2e.npz"%m)
-    #else:
-    cdat = np.load("limit_plots_long/proj_data_%.2e.npz"%m)
+    if( m>6e-3 ):
+        cdat = np.load("limit_plots_long/proj_data_%.2e.npz"%m)
+    else:
+        cdat = np.load("limit_plots_long/limit_data_%.2e.npz"%m)
 
     gpts = np.logical_not(np.isnan(cdat['limits']))
     gpts = np.logical_and( gpts, np.logical_or( cdat['mx_list']<200, cdat['mx_list']>300 ) )
-    gpts = np.logical_and( gpts, cdat['limits']>1.05e-9)
+    #gpts = np.logical_and( gpts, cdat['limits']>1.05e-9)
     
     
     if( m == 0.2):
@@ -52,7 +52,7 @@ for c,m in zip(cs, m_phi_list):
         xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),5,1e2)
     elif( m == 5e-3):
         xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),6,1e2)
-        gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<12500, cdat['mx_list']>13500 ))    
+        #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<12500, cdat['mx_list']>13500 ))    
         sfac = 0.35
     elif( m == 2e-3):
         #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<140, cdat['mx_list']>250 ))
@@ -70,7 +70,7 @@ for c,m in zip(cs, m_phi_list):
         #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<140, cdat['mx_list']>250 ))
         #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<5.6e4, cdat['mx_list']>6.2e4 ))
         #gpts = np.logical_and(gpts, cdat['mx_list']<1e5)
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),6,1e2)
+        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,1e2)
         sfac = 0.2
     else:
         xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),6,1e2)
@@ -123,8 +123,8 @@ plt.xlabel("Dark matter mass, $m_X$ [GeV]")
 plt.ylabel(r"Upper limit on neutron coupling, $\alpha_n$")
 #plt.title("Limits from 1 ng sphere, exposure = 20.6 min")
 plt.tight_layout(pad=0)
-plt.xlim([1e1, 1e6])
-plt.ylim([1e-10, 1e-5])
+plt.xlim([1e1, 1e9])
+plt.ylim([1e-12, 1e-5])
 fig.set_size_inches(5,4)
 plt.tight_layout()
 
