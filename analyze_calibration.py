@@ -275,6 +275,9 @@ if(repro):
             time_diffs_ip = tvec[inpeaks] - tvec[ip]
             time_diffs_op = tvec[outpeaks] - tvec[ip]
 
+            ## check for the closest outloop peak to the ipp
+            #opp_closest = tvec[
+            
             ##### in loop sensor only
             ## find the largest peak within the cal window for each
             if(np.any(np.abs(time_diffs_ip) < tthr)):
@@ -300,7 +303,7 @@ if(repro):
                     
             else:
                 ipp, ipt, ichi2 = -1, -1, 1e20
-
+            
             ### done with inloop
 
             ##outloop sensor only
@@ -328,7 +331,8 @@ if(repro):
             else:
                 opp, opt, ochi2 = -1, -1, 1e20
             ### done with outloop
-
+            
+            
             ## variables: time in seconds of event, inloop amp, inloop time, outloop amp, outloop time, calibration voltage, inloop chi2, outloop chi2
             joint_peaks.append( [file_offset+tvec[ip], ipp, ipt, opp, opt, volts, ichi2, ochi2] )
             #print( joint_peaks[-1] )
