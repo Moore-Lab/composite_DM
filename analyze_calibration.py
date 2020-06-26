@@ -13,19 +13,33 @@ from scipy.special import erf
 from scipy.interpolate import UnivariateSpline
 
 Fs = 1e4
-mass = 9.4e-13 # kg
-flen = 524288  # file length, samples
+mass = 1.03e-12 # kg
+#flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
-repro = False # Set true to reprocess data, false to read from file
+repro = True # Set true to reprocess data, false to read from file
+Fernando_path = True
 
-data_list = ["data/20200615_to/kick/0.1ms/0.1V",
-             "data/20200615_to/kick/0.1ms/0.2V",
-             "data/20200615_to/kick/0.1ms/0.4V",
-             "data/20200615_to/kick/0.1ms/0.8V",
-             "data/20200615_to/kick/0.1ms/1.6V",
-             "data/20200615_to/kick/0.1ms/3.2V",
-             "data/20200615_to/kick/0.1ms/6.4V"]
+if Fernando_path:
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
+                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
+                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
+                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
+                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
+                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
+                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
+    path2 = path1
+else:
+    data_list = ["data/20200615_to/kick/0.1ms/0.1V",
+                 "data/20200615_to/kick/0.1ms/0.2V",
+                "data/20200615_to/kick/0.1ms/0.4V",
+                "data/20200615_to/kick/0.1ms/0.8V",
+                "data/20200615_to/kick/0.1ms/1.6V",
+                "data/20200615_to/kick/0.1ms/3.2V",
+                 "data/20200615_to/kick/0.1ms/6.4V"]
+    path1 = "data/20200615_to/calibration1e_HiZ_20200615"
+    path2 = "data"
 
 # data_list = ["data/20200619/kick/0.1ms/0.1V",
 #              "data/20200619/kick/0.1ms/0.2V",
@@ -107,13 +121,13 @@ def make_template(Fs, f0, gamma_total, dp, Mass):
     return [a, time_template]
 
 #vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("data")
-vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("data/20200615_to/calibration1e_HiZ_20200615")
+vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance(path1)
 
 ## fix cal for now
-vtom_in *= np.sqrt(2)
-vtom_out *= np.sqrt(2)
+#vtom_in *= np.sqrt(2)
+#vtom_out *= np.sqrt(2)
 
-gam = get_gammas("data")
+gam = get_gammas(path2)
 temp = make_template(Fs, f0, gam, 1, mass)
 
 #tempt = np.hstack((np.zeros(500), temp[0]))
@@ -196,9 +210,9 @@ if(repro):
 
         ## get the real time of the file
         timestamp = cd[1]['Time']
-
-        fparts = f.split("/")
-        volts = float( fparts[4][:-1] )
+        fparts = f.split("V/")[0]
+        fparts = fparts.split("/")[-1]
+        volts = float( fparts )
         
         npts = len(dat[:,0])
         #print(npts)
@@ -238,8 +252,8 @@ if(repro):
 
         ## fudge factor of 1.1 accounts for amplitude loss in filter frequency for finding envelope
         ## don't worry about the fudge factor, it's fine...
-        incorrf *= 1.1*np.sqrt(2)*SI_to_GeV
-        outcorrf *= 1.1*np.sqrt(2)*SI_to_GeV
+        incorrf *= 1.1*SI_to_GeV #*np.sqrt(2)
+        outcorrf *= 1.1*SI_to_GeV #*np.sqrt(2)
         inpeaks_orig = sp.find_peaks(incorrf)[0]
         outpeaks_orig = sp.find_peaks(outcorrf)[0]
 
@@ -248,7 +262,7 @@ if(repro):
         outpeaks = np.zeros_like(outpeaks_orig)        
 
         ## 2 ms shouldn't be hardcoded -- depends on the period of the oscillation (sphere res frequency)
-        naround = int(Fs * 0.002)
+        naround = int(Fs * 1./(2.*np.pi*f0))
         for j,ip in enumerate(inpeaks_orig):
             if( ip<500 or ip>npts-500 ):
                 inpeaks[j] = 0
@@ -271,7 +285,7 @@ if(repro):
         random_cts_out = 0
         ## skip beginning and end of files to prevent edge effects (maybe revisit if this is long enough??)
         for ip in pstart:
-            if( ip<500 or ip>npts-500): continue
+            if( ip<1000 or ip>npts-1000): continue
             time_diffs_ip = tvec[inpeaks] - tvec[ip]
             time_diffs_op = tvec[outpeaks] - tvec[ip]
 
