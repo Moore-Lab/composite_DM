@@ -66,7 +66,7 @@ cut_eff = 0.95  #efficiency of acceleromter cut
 Exposuretime *= cut_eff
 
 ## energy threshold
-analysis_thresh = 0.34 ##20% eff
+analysis_thresh = 0.25 ##20% eff
 sidx=np.argwhere( bc > analysis_thresh).flatten()[0]
 print(sidx)
 
@@ -146,7 +146,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         if(alpha == 0):
             dm_rate = np.zeros_like(qq)
         else:
-            dm_rate = fdict[mx](np.log10(qq), np.log10(alpha))
+            dm_rate = 10**(fdict[mx](np.log10(qq), np.log10(alpha)))
             dm_rate[np.isnan(dm_rate)] = 0
 
             ## now correct by angular distribution

@@ -10,7 +10,7 @@ import pickle
 
 ## calculate dR/dq for a massless mediator
 
-mxlist = [1e6,] #np.hstack((np.logspace(np.log10(25), 3, 20), np.logspace(3.1,9,20)))
+mxlist = np.logspace(6, 9, 8)
 
 vesc = 1.835e-3 ## galactic escape velocity
 v0 = 7.34e-4 ## v0 parameter from Zurek group paper
@@ -18,7 +18,7 @@ ve = 8.014e-4 ## ve parameter from Zurek group paper
 vmin = 1e-5
 nvels = 10
 
-rhoDM = 0.4 # dark matter mass density, GeV/cm^3
+rhoDM = 0.3 # dark matter mass density, GeV/cm^3
 
 N_T = 4.5e15/2 ## number neutrons
 alpha_n = 1e-10
@@ -70,7 +70,7 @@ def nint( u, b, k, R, E):
 
 prefac = alpha_n**2 * N_T**2
 
-qq = np.linspace(0.05, 1e2, 1000)
+qq = np.linspace(0.1, 1e2, 1000)
 
 plt.figure()
 
@@ -169,82 +169,85 @@ for mx in mxlist:
             sigvals[qq > qmax] = 0
             dRdq_mat[:,vidx] = sigvals * nX * conv_fac
 
-            if(aidx == 0):
-                ##now inside
-                cint = integrand(bvec, k, bmin, Ecm)
-                numint = np.zeros_like(bvec)
-                for jj,cb in enumerate(bvec):
+            # if(aidx == 0):
+            #     ##now inside
+            #     cint = integrand(bvec, k, bmin, Ecm)
+            #     numint = np.zeros_like(bvec)
+            #     for jj,cb in enumerate(bvec):
 
-                    umaxval = umax1( cb, k, Ecm, bmin)
-                    ffn = lambda u: nint(u,cb,k,bmin,Ecm)
-                    ival = quad(ffn, 1/bmin, umaxval)
-                    numint[jj] = ival[0]
+            #         umaxval = umax1( cb, k, Ecm, bmin)
+            #         ffn = lambda u: nint(u,cb,k,bmin,Ecm)
+            #         ival = quad(ffn, 1/bmin, umaxval)
+            #         numint[jj] = ival[0]
 
-                alp = k/(Ecm * bvec)
-                R = 1.0*bmin
-                anint = np.arctan( (alp + 2*bvec/R)/(2*np.sqrt(1-alp*bvec/R-(bvec/R)**2)) ) - np.arctan(alp/2)
-                theta = np.pi - 2*( numint + anint )
+            #     alp = k/(Ecm * bvec)
+            #     R = 1.0*bmin
+            #     anint = np.arctan( (alp + 2*bvec/R)/(2*np.sqrt(1-alp*bvec/R-(bvec/R)**2)) ) - np.arctan(alp/2)
+            #     theta = np.pi - 2*( numint + anint )
 
-                alp = k/(Ecm * bvec_out)
-                theta_out = 2*np.arcsin(alp/np.sqrt(4+alp**2))
-                alp = k/(Ecm * bvec)
-                theta_in_pt = 2*np.arcsin(alp/np.sqrt(4+alp**2))
+            #     alp = k/(Ecm * bvec_out)
+            #     theta_out = 2*np.arcsin(alp/np.sqrt(4+alp**2))
+            #     alp = k/(Ecm * bvec)
+            #     theta_in_pt = 2*np.arcsin(alp/np.sqrt(4+alp**2))
 
-                q = p * np.sqrt(2 * (1-np.cos(theta)))
-                q_out = p * np.sqrt(2 * (1-np.cos(theta_out)))
-                q_in_pt = p * np.sqrt(2 * (1-np.cos(theta_in_pt)))
+            #     q = p * np.sqrt(2 * (1-np.cos(theta)))
+            #     q_out = p * np.sqrt(2 * (1-np.cos(theta_out)))
+            #     q_in_pt = p * np.sqrt(2 * (1-np.cos(theta_in_pt)))
 
-                q_orig[vidx] = q
-                q_out_orig[vidx] = q_out
+            #     q_orig[vidx] = q
+            #     q_out_orig[vidx] = q_out
 
-                if(True):
-                    afac = (alpha/aa[0])
-                    gpts = np.logical_not(np.isnan(theta))
-                    plt.figure()
-                    plt.plot( bvec*hbarc*1e4, q, 'b')
-                    plt.plot( bvec_out*hbarc*1e4, q_out, 'b')
-                    plt.plot( bvec*hbarc*1e4, q_in_pt, "b:")
-                    plt.plot( bvec*hbarc*1e4, q_orig[vidx]*afac, 'r:')
-                    plt.plot( bvec_out*hbarc*1e4, q_out_orig[vidx]*afac, 'r:')
-                    plt.ylim([0, np.max(q[gpts])*2])
-                    plt.xlabel("Impact param, b [um]")
-                    plt.ylabel(r"Momentum transfer, q [GeV]")
-                    plt.title("Mass %.2e, alpha %.2e"%(mx,alpha))
-                    plt.savefig("massless_plots/m%.2e_a%.2e_v%.4e.pdf"%(mx,alpha,vel))
-                    plt.show()
+            #     if(True):
+            #         afac = (alpha/aa[0])
+            #         gpts = np.logical_not(np.isnan(theta))
+            #         plt.figure()
+            #         plt.plot( bvec*hbarc*1e4, q, 'b')
+            #         plt.plot( bvec_out*hbarc*1e4, q_out, 'b')
+            #         plt.plot( bvec*hbarc*1e4, q_in_pt, "b:")
+            #         plt.plot( bvec*hbarc*1e4, q_orig[vidx]*afac, 'r:')
+            #         plt.plot( bvec_out*hbarc*1e4, q_out_orig[vidx]*afac, 'r:')
+            #         plt.ylim([0, np.max(q[gpts])*2])
+            #         plt.xlabel("Impact param, b [um]")
+            #         plt.ylabel(r"Momentum transfer, q [GeV]")
+            #         plt.title("Mass %.2e, alpha %.2e"%(mx,alpha))
+            #         plt.savefig("massless_plots/m%.2e_a%.2e_v%.4e.pdf"%(mx,alpha,vel))
+            #         plt.show()
                 
-            else:
-                afac = (alpha/aa[0])
-                q = q_orig[vidx] * afac
+            # else:
+            #     afac = (alpha/aa[0])
+            #     q = q_orig[vidx] * afac
                 
-            gpts = np.logical_not(np.isnan(theta))
-            dbdq = np.abs(np.gradient( bvec[gpts], q[gpts] ))
+            # gpts = np.logical_not(np.isnan(theta))
+            # dbdq = np.abs(np.gradient( bvec[gpts], q[gpts] ))
             
-            maxpos = np.argmax(dbdq)
-            dsigdq1 = np.interp(qq, q[gpts][:maxpos], 2*np.pi*bvec[gpts][:maxpos]*dbdq[:maxpos], left=0, right=0)
-            dsigdq2 = np.interp(qq, q[gpts][maxpos:], 2*np.pi*bvec[gpts][maxpos:]*dbdq[maxpos:], left=0, right=0)
-            dsigdq_tot = dsigdq1 + dsigdq2
+            # maxpos = np.argmax(dbdq)
+            # dsigdq1 = np.interp(qq, q[gpts][:maxpos], 2*np.pi*bvec[gpts][:maxpos]*dbdq[:maxpos], left=0, right=0)
+            # dsigdq2 = np.interp(qq, q[gpts][maxpos:], 2*np.pi*bvec[gpts][maxpos:]*dbdq[maxpos:], left=0, right=0)
+            # dsigdq_tot = dsigdq1 + dsigdq2
 
-            dRdq_in_mat[:,vidx] = dsigdq_tot * nX * conv_fac
+            # dRdq_in_mat[:,vidx] = dsigdq_tot * nX * conv_fac
             
-            #if(True):
-            #    plt.figure()
-            #    plt.plot( qq, dsigdq_tot*hbarc**2)
-            #    plt.show()
+            # #if(True):
+            # #    plt.figure()
+            # #    plt.plot( qq, dsigdq_tot*hbarc**2)
+            # #    plt.show()
             
         for j in range( len(qq) ):
             dRdq[j] = np.trapz(dRdq_mat[j,:], vel_list)
-            dRdq_in[j] = np.trapz(dRdq_in_mat[j,:], vel_list)
+            #dRdq_in[j] = np.trapz(dRdq_in_mat[j,:], vel_list)
 
-        if(True):
+        if(False):
             plt.figure()
             plt.plot( qq, dRdq)
             plt.plot( qq, dRdq_in)
             plt.show()
         
-        dRdq = np.convolve(dRdq+dRdq_in, gkern, mode='same')
+        dRdq = np.convolve(dRdq, gkern, mode='same')
         out_dat[aidx,:] = dRdq
 
+        outdir = "/Users/dcmoore/Google Drive/yale/uspheres/impulse/grace/data/mphi_0e+00"
+        np.savez(outdir + "/differential_rate_alpha_%.5e_MX_%.5e.npz"%(alpha, mx), q=qq, dsigdq=dRdq)
+        
         #fpts = qq > 2
         #print(alpha, np.trapz(dRdq[fpts], qq[fpts])) ##(alpha * N_T)**2/(8*np.pi) * 1/(2)**2 * 1/vel * nX * conv_fac * 5*24)
         

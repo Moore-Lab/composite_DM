@@ -18,7 +18,9 @@ mass = 1.03e-12 # kg
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
 repro = True # Set true to reprocess data, false to read from file
-Fernando_path = True
+Fernando_path = False
+
+calibration_date = "20200615"
 
 if Fernando_path:
     data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
@@ -31,13 +33,13 @@ if Fernando_path:
     path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
     path2 = path1
 else:
-    data_list = ["data/20200615_to/kick/0.1ms/0.1V",
-                 "data/20200615_to/kick/0.1ms/0.2V",
-                "data/20200615_to/kick/0.1ms/0.4V",
-                "data/20200615_to/kick/0.1ms/0.8V",
-                "data/20200615_to/kick/0.1ms/1.6V",
-                "data/20200615_to/kick/0.1ms/3.2V",
-                 "data/20200615_to/kick/0.1ms/6.4V"]
+    data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
+                 "data/"+calibration_date+"_to/kick/0.1ms/0.2V",
+                "data/"+calibration_date+"_to/kick/0.1ms/0.4V",
+                "data/"+calibration_date+"_to/kick/0.1ms/0.8V",
+                "data/"+calibration_date+"_to/kick/0.1ms/1.6V",
+                "data/"+calibration_date+"_to/kick/0.1ms/3.2V",
+                 "data/"+calibration_date+"_to/kick/0.1ms/6.4V"]
     path1 = "data/20200615_to/calibration1e_HiZ_20200615"
     path2 = "data"
 
@@ -479,7 +481,7 @@ for i,v in enumerate(vlist):
     #plt.plot(xx, ffn(xx,*bp), color=cols[i])
     corr_fac = np.trapz( ffn(xx, *[bp[0],bp[1],bp[2],0]), xx )/np.trapz( ffn(xx, *bp ),xx)
     good_cts_in = np.sum( hh[np.logical_not(blpts)]-baseline )
-
+    
 
     ## find trigger efficiency and random coincident rate (out loop)
     plt.figure(fig_out.number)
@@ -567,10 +569,11 @@ def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
     return A1*(1+erf((x-mu1)/(np.sqrt(2)*sig1)))/2 + A2*(1+erf((np.log(x)-mu2)/(np.sqrt(2)*sig2)))/2
 
 #spars=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-spars = [ 0.70557531, 0.81466432, 0.31597654, 0.29442469, -1.07858784, 0.3547105 ]
+spars = [ 0.70557531, 0.51466432, 0.51597654, 0.29442469, 1.07858784, 0.3547105 ]
 bpi, bci = curve_fit(ffnerf, gev_list, eff_list[:,0], sigma=(eff_list[:,1]+eff_list[:,2])/2, p0=spars)
-bpo, bco = curve_fit(ffnerf, gev_list, eff_list[:,3], sigma=(eff_list[:,4]+eff_list[:,5])/2, p0=spars)
 #bpi = spars
+spars = [ 0.70557531, 0.81466432, 0.31597654, 0.29442469, 1.07858784, 0.3547105 ]
+bpo, bco = curve_fit(ffnerf, gev_list, eff_list[:,3], sigma=(eff_list[:,4]+eff_list[:,5])/2, p0=spars)
 #bpo = spars
 
 
@@ -613,5 +616,11 @@ plt.plot(xx, np.polyval(pout, xx), 'r')
 pass_cut = np.logical_and( joint_peaks[gpts,6] < np.polyval(pin, joint_peaks[gpts,1]), joint_peaks[gpts,7] < np.polyval(pout, joint_peaks[gpts,3]))
 
 print("Cut efficiency, out+in: ", np.sum(pass_cut)/len(pass_cut))
+
+chi2eff = np.sum(pass_cut)/len(pass_cut)
+
+## now save all parameters to a calibration file
+eng_cal_pars = [corr_fac_in, corr_fac_out]
+np.savez("calibration_file_"+calibration_date+".npz", reconeff_params=bpi, chi2eff=chi2eff, bias_cal_params=ecbp, eng_cal_pars=eng_cal_pars, amp_match_eff=cut_eff, chi2cut_pars_in=pin, chi2cut_pars_out=pout)
 
 plt.show()

@@ -13,12 +13,12 @@ mass = 9.4e-13 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
-repro = False
-remake_coinc_cut = False
+repro = True
+remake_coinc_cut = True
 
-data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619"]
-eng_cal_in = [1.04, 1.04, 1.04]
-eng_cal_out = [1.05, 1.05, 1.12]
+## don't use the 20200621 folder since the noise is 50% higher
+data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619",]#"data/DM_20200621"]
+cal_list = ["calibration_file_20200615.npz","calibration_file_20200615.npz","calibration_file_20200619.npz"]#,"calibration_file_20200619.npz"]
 
 def getdata(fname, gain_error=1.0):
     ### Get bead data from a file.  Guesses whether it's a text file
@@ -78,8 +78,8 @@ vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("data/20200615_to/calibration
 print("f0: ",f0)
 
 ## fix cal for now
-vtom_in *= np.sqrt(2) ##/1.04
-vtom_out *= np.sqrt(2) ##/1.05
+#vtom_in *= np.sqrt(2) ##/1.04
+#vtom_out *= np.sqrt(2) ##/1.05
 
 gam = get_gammas("data")
 temp = make_template(Fs, f0, gam, 1, mass)
@@ -145,12 +145,14 @@ print(vtom_in, vtom_out, f0, gam )
 flist = []
 ecilist = []
 ecolist = []
-for eci, eco, d in zip(eng_cal_in, eng_cal_out, data_list):
+for calfile, d in zip(cal_list, data_list):
     f = sorted(glob.glob(d + "/*.h5"), key=get_num)
     for ff in f:
         flist.append(ff)
-        ecilist.append(eci)
-        ecolist.append(eco)
+        ccal = np.load(calfile)
+        eng_cal_pars = ccal['eng_cal_pars']        
+        ecilist.append(eng_cal_pars[0])
+        ecolist.append(eng_cal_pars[1])
         
 if(repro):
     ## now load each file and process the data for kicks
@@ -325,8 +327,8 @@ for acol in accel_cols:
     yerrs=np.sqrt(ha)
     yerrs[0] = 1
     fpts = ha > 0.2*np.max(ha)
-    bap, bacov = curve_fit( gauss_fit, bac[fpts], ha[fpts], sigma=yerrs[fpts], p0=[5e6, mu, sig])
-    #bap = [5e6, mu, sig]
+    #bap, bacov = curve_fit( gauss_fit, bac[fpts], ha[fpts], sigma=yerrs[fpts], p0=[5e6, mu, sig])
+    bap = [5e6, mu, sig]
     bb = np.linspace(bac[0], bac[-1], 1e3)
     plt.plot( bb, gauss_fit(bb, *bap), 'r')
     cut_val = bap[1] + 2.5*np.abs(bap[2])
