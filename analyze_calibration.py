@@ -40,8 +40,17 @@ else:
                 "data/"+calibration_date+"_to/kick/0.1ms/1.6V",
                 "data/"+calibration_date+"_to/kick/0.1ms/3.2V",
                  "data/"+calibration_date+"_to/kick/0.1ms/6.4V"]
+    # data_list = ["/Users/dcmoore/Desktop/0.1ms/0.1V",
+    #              "/Users/dcmoore/Desktop/0.1ms/0.2V",
+    #              "/Users/dcmoore/Desktop/0.1ms/0.4V",
+    #              "/Users/dcmoore/Desktop/0.1ms/0.8V",
+    #              "/Users/dcmoore/Desktop/0.1ms/1.6V",
+    #              "/Users/dcmoore/Desktop/0.1ms/3.2V",
+    #              "/Users/dcmoore/Desktop/0.1ms/6.4V"]
     path1 = "data/20200615_to/calibration1e_HiZ_20200615"
+    #path1 = "/Users/dcmoore/Desktop/important_npy"
     path2 = "data"
+    #path2 = path1
 
 # data_list = ["data/20200619/kick/0.1ms/0.1V",
 #              "data/20200619/kick/0.1ms/0.2V",
@@ -535,8 +544,9 @@ plt.ylabel("Recontructed amplitude")
 
 
 ## fit calibraion to get search bias at low energy
-ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=[0.1,1,1])
-#ecbp = [0.1,1,1]
+spars = [1.42721076, -0.5189387, 1]
+ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars, maxfev=10000)
+#ecbp = spars
 plt.plot( xx, cfit(xx, *ecbp), 'k')
 
 print("Energy cal params: ", ecbp)
