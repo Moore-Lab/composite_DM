@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.special import erf
 
-m_phi = 0
+m_phi = 5e-2
 
 o = open("drdq_interp_grace_%.2e.pkl"%m_phi, 'rb')
 fdict = pickle.load(o)
@@ -114,7 +114,7 @@ binsize = bc[1]-bc[0]
     
 for mi_idx, mx in enumerate(mx_list): #mx = 1000
     print("Working on mass: ", mx)
-
+    
     plt.figure()
     plt.errorbar(bc, h/cts_per_day, yerr = sigma/cts_per_day, fmt = "k.")#, color = "#7c1ee9")
     plt.plot(xx, gauss_fit(xx, *bp), 'k')
@@ -210,7 +210,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         else:
             plt.plot( bc, (dm_vec + best_ga*bg_vec)/cts_per_day, color = cols[j])
         
-        print(logL_vec[j])
+        print("logL, alpha: ", logL_vec[j], alpha)
         if( np.isnan(logL_vec[j]) ):
             print("Bad value, skipping mass")
             break
@@ -219,7 +219,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             break
         if(logL_vec[j]<best_logL):
             best_logL = logL_vec[j]
-        if(logL_vec[j]<=best_logL+4):
+        if(logL_vec[j]<=best_logL+2):
             upper_lim_curve = (dm_vec + best_ga*bg_vec)/cts_per_day
 
     plt.legend()
@@ -236,6 +236,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     plt.errorbar(bc[sidx:], h[sidx:]/cts_per_day - upper_lim_curve[sidx:], yerr = sigma[sidx:]/cts_per_day, fmt = "r.")#, color = "#7c1ee9")
     plt.xlabel('dp [GeV]')
     plt.ylabel('Residual from best fit [cts/bin]')
+    plt.xlim([0,3])
     plt.title(r"DM Mass = %.1e GeV, $m_\phi = %.1e$"%(mx, m_phi))
     plt.tight_layout(pad=0)
     plt.savefig("limit_plots_long/data_vs_dm_mx_resid_%.1e_m_phi_%.2e.pdf"%(mx,m_phi))
@@ -252,7 +253,6 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     # plt.plot( alpha_vec, logL_vec )
     # plt.show()
     
-    midx = np.argmin(logL_vec)
     # lastval = np.min(((midx+3), len(alpha_vec)))
     # firstval = np.max((midx, midx-2))
     # pp = np.polyfit( alpha_vec[(firstval):lastval], logL_vec[(firstval):lastval], 2)
@@ -272,14 +272,16 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     #     limval = np.nan
     #     upper_idx = len(uvec)-1
 
-    minval = np.min(logL_vec)
+    ## do hypothesis test relative to no DM:
+    midx = 0 #np.argmin(logL_vec)
+    minval = logL_vec[midx] #np.min(logL_vec)
     logL_vec = logL_vec - minval
     
     limval = np.interp(4, logL_vec[midx:], alpha_vec[midx:], left=np.nan, right=np.nan)
     xx = np.linspace(alpha_vec[midx], 1.1*limval, 1000)
     
     fig = plt.figure()
-    plt.plot( alpha_vec, logL_vec)
+    plt.semilogx( alpha_vec, logL_vec)
     plt.xlabel(r"Neutron coupling, $\alpha_n$")
     plt.ylabel("Negative Log Likelihood, -2 ln( L )")
     #plt.plot(xx, ff , 'r')
@@ -288,7 +290,8 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     plt.plot( alpha_vec, logL_vec)
     #plt.plot(xx, ff , 'r')
     if(not np.isnan(limval)):
-        plt.xlim( alpha_vec[midx], 1.1*limval)
+        xlimval = np.max([0, midx-5])
+        plt.xlim( alpha_vec[xlimval], 1.1*limval)
     plt.ylim( (0,5) )
     xxl = plt.xlim()
     plt.plot( xxl, [4,4], 'k:' )
