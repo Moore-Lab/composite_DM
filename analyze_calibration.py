@@ -18,19 +18,19 @@ mass = 1.03e-12 # kg
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
 repro = True # Set true to reprocess data, false to read from file
-Fernando_path = False
+Fernando_path = True
 
-calibration_date = "20200615"
+calibration_date = "20200619"
 
 if Fernando_path:
     data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200619/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
@@ -479,7 +479,7 @@ for i,v in enumerate(vlist):
     plt.figure(fig_in.number)
     hh, be = np.histogram( cdat[:,2], range=(-tthr,tthr), bins=50 )
     bc = be[:-1]+np.diff(be)/2
-    blpts = np.logical_or(bc < -0.02, bc > 0.02)
+    blpts = np.logical_or(bc < -0.015, bc > 0.015)
     baseline = np.mean(hh[blpts])
     plt.errorbar(bc, hh-baseline, yerr=np.sqrt(hh), fmt='o', label=str(gev_list[i]), color=cols[i])
     ## now gauss + const fit
@@ -498,7 +498,7 @@ for i,v in enumerate(vlist):
     plt.figure(fig_out.number)
     hh, be = np.histogram( cdat[:,4], range=(-tthr,tthr), bins=50 )
     bc = be[:-1]+np.diff(be)/2
-    blpts = np.logical_or(bc < -0.02, bc > 0.02)
+    blpts = np.logical_or(bc < -0.015, bc > 0.015)
     baseline = np.mean(hh[blpts])
     plt.errorbar(bc, hh-baseline, yerr=np.sqrt(hh), fmt='o', label=str(gev_list[i]), color=cols[i])
     ## now gauss + const fit
@@ -533,7 +533,7 @@ corr_fac_out = np.mean( mean_list[-3:,1]/gev_list[-3:] )
 
 ## now fit center and sigma of blob
 def cfit(x,A,mu,sig):
-    return x + A*(1+erf((mu-x)/sig))
+    return x + A*(1.+erf((mu-x)/sig))
 
 xx = np.linspace(0, gev_list[-1]*1.2, 1000)
 
@@ -547,7 +547,7 @@ plt.ylabel("Recontructed amplitude")
 
 ## fit calibraion to get search bias at low energy
 spars = [1.42721076, -0.5189387, 1]
-ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars, maxfev=10000)
+ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars,  maxfev=10000)
 #ecbp = spars
 plt.plot( xx, cfit(xx, *ecbp), 'k')
 
@@ -568,7 +568,17 @@ cbp, cbc = curve_fit(cfit, joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_f
 
 ## calculate the efficiency of the in/out loop amplitude matching criterion
 plt.figure()
-xvals, yvals = joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out
+#xvals, yvals = joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out
+# the for loop below is to remove negative values for when the code fails to find the peak at any of two detectors.
+xvals = []
+yvals = []
+for i in range(len(joint_peaks[:,1])):
+    if joint_peaks[:,1][i] > 0. and joint_peaks[:,3][i]  > 0.:
+        xvals.append(joint_peaks[:,1][i] /corr_fac_in)
+        yvals.append(joint_peaks[:,3][i] /corr_fac_out)
+xvals = np.array(xvals)
+yvals = np.array(yvals)
+
 plt.plot( xvals, yvals, 'k.', ms=1)
 #plt.plot( gev_list, gev_list, 'r:')
 plt.plot( xx, cfit(xx, *cbp), 'r:')
