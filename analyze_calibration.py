@@ -20,17 +20,17 @@ tthr = 0.050 ## time threshold in s for which to look for coincidences with cali
 repro = True # Set true to reprocess data, false to read from file
 Fernando_path = True
 
-calibration_date = "20200619"
+calibration_date = "20200617"
 
 if Fernando_path:
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200619/important_npy"
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.1V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/1.6V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/6.4V"]
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200617/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
@@ -599,28 +599,33 @@ plt.ylabel("Reconstructed out of loop amp [GeV]")
 def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
     return A1*(1+erf((x-mu1)/(np.sqrt(2)*sig1)))/2 + A2*(1+erf((np.log(x)-mu2)/(np.sqrt(2)*sig2)))/2
 
+def ffnerf2(x, A1, mu1, sig1, A2):
+    return A1*(1.+erf((x-mu1)/(np.sqrt(2.)*sig1)))/2. + A2
+
 #spars=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-spars = [ 0.70557531, 0.51466432, 0.51597654, 0.29442469, 1.07858784, 0.3547105 ]
+#spars = [ 0.70557531, 0.51466432, 0.51597654, 0.29442469, 1.07858784, 0.3547105 ]
+spars = [1.83226494, 0.19640354, 0.56620851, -0.83184023]
 xo,yo,xeo = gev_list, eff_list[:,0], (eff_list[:,1]+eff_list[:,2])/2
-bpi, bci = curve_fit(ffnerf, gev_list, eff_list[:,0], sigma=(eff_list[:,1]+eff_list[:,2])/2, p0=spars)
+bpi, bci = curve_fit(ffnerf2, gev_list, eff_list[:,0], p0=spars)
 #bpi = spars
-spars = [ 0.70557531, 0.81466432, 0.31597654, 0.29442469, 1.07858784, 0.3547105 ]
-bpo, bco = curve_fit(ffnerf, gev_list, eff_list[:,3], sigma=(eff_list[:,4]+eff_list[:,5])/2, p0=spars)
+bpo, bco = curve_fit(ffnerf2, gev_list, eff_list[:,3], p0=spars)
 #bpo = spars
 
+print (bpi)
+print (bpo)
 
 spli = UnivariateSpline(gev_list, eff_list[:,0],w=2/(eff_list[:,1]+eff_list[:,2]))
 splo = UnivariateSpline(gev_list, eff_list[:,3],w=2/(eff_list[:,4]+eff_list[:,5]))
 
 plt.figure()
 plt.errorbar( gev_list, eff_list[:,0], yerr=(eff_list[:,1],eff_list[:,2]), fmt='k.')
-plt.plot(xx, ffnerf(xx, *bpi), 'k', label='in loop')
+plt.plot(xx, ffnerf2(xx, *bpi), 'k', label='in loop')
 #plt.plot(xx, spli(xx), 'k')
 plt.errorbar( gev_list, eff_list[:,3], yerr=(eff_list[:,4],eff_list[:,5]), fmt='r.')
-plt.plot(xx, ffnerf(xx, *bpo), 'r', label='out of loop')
+plt.plot(xx, ffnerf2(xx, *bpo), 'r', label='out of loop')
 #plt.plot(xx, splo(xx), 'r')
 
-plt.plot(xx, ffnerf(xx, *bpi)*ffnerf(xx, *bpo), 'b', label='combined')
+plt.plot(xx, ffnerf2(xx, *bpi)*ffnerf2(xx, *bpo), 'b', label='combined')
 
 plt.xlabel("Impulse amplitude [GeV]")
 plt.ylabel("Reconstruction efficiency")

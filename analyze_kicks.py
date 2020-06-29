@@ -9,16 +9,19 @@ import matplotlib.dates
 from scipy.special import erf
 
 Fs = 1e4
-mass = 9.4e-13 # kg
+mass = 1.03e-12 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
-repro = False
-remake_coinc_cut = False
+repro = True
+remake_coinc_cut = True
 
 ## don't use the 20200621 folder since the noise is 50% higher
 data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619",]#"data/DM_20200621"]
-cal_list = ["calibration_file_20200615.npz","calibration_file_20200615.npz","calibration_file_20200619.npz"]#,"calibration_file_20200619.npz"]
+data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/DM_20200615",
+             "/Volumes/My Passport for Mac/DM measurements/20200617/DM",
+             "/Volumes/My Passport for Mac/DM measurements/20200619/DM",]#"data/DM_20200621"]
+cal_list = ["calibration_file_20200615.npz","calibration_file_20200617.npz","calibration_file_20200619.npz"]#,"calibration_file_20200619.npz"]
 
 def getdata(fname, gain_error=1.0):
     ### Get bead data from a file.  Guesses whether it's a text file
@@ -74,14 +77,14 @@ def make_template(Fs, f0, gamma_total, dp, Mass):
     return [a, time_template]
 
 #vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("data")
-vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("data/20200615_to/calibration1e_HiZ_20200615")
+vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("/Volumes/My Passport for Mac/DM measurements/20200617/important_npy")
 print("f0: ",f0)
 
 ## fix cal for now
 #vtom_in *= np.sqrt(2) ##/1.04
 #vtom_out *= np.sqrt(2) ##/1.05
 
-gam = get_gammas("data")
+gam = get_gammas("/Volumes/My Passport for Mac/DM measurements/20200617/important_npy")
 temp = make_template(Fs, f0, gam, 1, mass)
 
 #tempt = np.hstack((np.zeros(500), temp[0]))
