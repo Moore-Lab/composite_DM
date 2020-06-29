@@ -124,7 +124,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     plt.ylim((0.1, 3e5))
     #plt.show()
     
-    alpha_vec = np.logspace(-11, -4, 80)
+    alpha_vec = np.hstack((0,np.logspace(-11, -4, 80)))
     
     #qq = np.linspace(bc[0]-binsize/2, 10, 1e6)
     qq = np.linspace(0,20,int(1e6))
@@ -218,17 +218,29 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             print("Found minimum")
             break
         if(logL_vec[j]<best_logL):
-            best_logL = logL_vec[j] 
+            best_logL = logL_vec[j]
+        if(logL_vec[j]<=best_logL+4):
+            upper_lim_curve = (dm_vec + best_ga*bg_vec)/cts_per_day
 
     plt.legend()
 
     #plt.savefig("/Users/fernandomonteiro/Desktop/Python/Impulse/tempx9/8/hist.pdf")
     plt.tight_layout(pad=0)
     plt.title(r"DM Mass = %.1e GeV, $m_\phi = %.1e$"%(mx, m_phi))
-    plt.gca().set_yscale("linear")
     plt.tight_layout(pad=0)
     plt.savefig("limit_plots_long/data_vs_dm_mx_%.1e_m_phi_%.2e.pdf"%(mx,m_phi))
     pdf.savefig()
+
+    plt.figure()
+    plt.errorbar(bc[sidx:], h[sidx:]/cts_per_day - bg_vec[sidx:]/cts_per_day, yerr = sigma[sidx:]/cts_per_day, fmt = "k.", label="no DM")#, color = "#7c1ee9")
+    plt.errorbar(bc[sidx:], h[sidx:]/cts_per_day - upper_lim_curve[sidx:], yerr = sigma[sidx:]/cts_per_day, fmt = "r.")#, color = "#7c1ee9")
+    plt.xlabel('dp [GeV]')
+    plt.ylabel('Residual from best fit [cts/bin]')
+    plt.title(r"DM Mass = %.1e GeV, $m_\phi = %.1e$"%(mx, m_phi))
+    plt.tight_layout(pad=0)
+    plt.savefig("limit_plots_long/data_vs_dm_mx_resid_%.1e_m_phi_%.2e.pdf"%(mx,m_phi))
+    pdf.savefig()
+    
     #plt.show()
     
     #plt.figure()
