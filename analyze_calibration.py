@@ -20,17 +20,17 @@ tthr = 0.050 ## time threshold in s for which to look for coincidences with cali
 repro = True # Set true to reprocess data, false to read from file
 Fernando_path = True
 
-calibration_date = "20200617"
+calibration_date = "20200619"
 
 if Fernando_path:
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.1V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.4V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.8V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/1.6V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/3.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/6.4V"]
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200617/important_npy"
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200619/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
