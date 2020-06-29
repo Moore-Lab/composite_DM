@@ -446,7 +446,7 @@ else:
 
 vlist = np.array([0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4])
 eff_list = np.zeros((len(vlist),6))
-mean_list = np.zeros((len(vlist),4))
+mean_list = np.zeros((len(vlist),6))
 
 fig_in = plt.figure()
 fig_out = plt.figure()
@@ -467,8 +467,10 @@ for i,v in enumerate(vlist):
     gpts1 = cdat[:,1] > 0
     gpts2 = cdat[:,3] > 0
     std1 = np.std( cdat[gpts1,1] )/np.sqrt(np.sum(gpts1))
-    std2 = np.std( cdat[gpts2,3] )/np.sqrt(np.sum(gpts2))    
-    mean_list[i,:] = [ np.median(cdat[gpts1,1]), np.median(cdat[gpts2,3]), std1, std2 ]
+    std2 = np.std( cdat[gpts2,3] )/np.sqrt(np.sum(gpts2))
+    res1 = np.std( cdat[gpts1,1] )
+    res2 = np.std( cdat[gpts2,3] )
+    mean_list[i,:] = [ np.median(cdat[gpts1,1]), np.median(cdat[gpts2,3]), std1, std2, res1, res2 ]
 
     good_cts_in, good_cts_out = np.sum( cdat[:,1] >0), np.sum( cdat[:,3] >0)
 
@@ -552,6 +554,15 @@ plt.plot( xx, cfit(xx, *ecbp), 'k')
 print("Energy cal params: ", ecbp)
 
 
+## find the resolution at each kick value
+plt.figure()
+plt.errorbar( gev_list, mean_list[:,4]/corr_fac_in, yerr=0, fmt='k.')
+plt.errorbar( gev_list, mean_list[:,5]/corr_fac_out, yerr=0, fmt='r.')
+plt.xlabel("Calibration pulse amp [GeV]")
+plt.ylabel("Resolution [GeV]")
+
+
+
 cbp, cbc = curve_fit(cfit, joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out, p0=[0.1,1,1])
 #cbp = [0.1,1,1]
 
@@ -590,6 +601,7 @@ def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
 
 #spars=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 spars = [ 0.70557531, 0.51466432, 0.51597654, 0.29442469, 1.07858784, 0.3547105 ]
+xo,yo,xeo = gev_list, eff_list[:,0], (eff_list[:,1]+eff_list[:,2])/2
 bpi, bci = curve_fit(ffnerf, gev_list, eff_list[:,0], sigma=(eff_list[:,1]+eff_list[:,2])/2, p0=spars)
 #bpi = spars
 spars = [ 0.70557531, 0.81466432, 0.31597654, 0.29442469, 1.07858784, 0.3547105 ]
@@ -641,6 +653,6 @@ chi2eff = np.sum(pass_cut)/len(pass_cut)
 
 ## now save all parameters to a calibration file
 eng_cal_pars = [corr_fac_in, corr_fac_out]
-np.savez("calibration_file_"+calibration_date+".npz", reconeff_params=bpi, chi2eff=chi2eff, bias_cal_params=ecbp, eng_cal_pars=eng_cal_pars, amp_match_eff=cut_eff, chi2cut_pars_in=pin, chi2cut_pars_out=pout)
+np.savez("calibration_file_"+calibration_date+".npz", reconeff_params=bpi, chi2eff=chi2eff, bias_cal_params=ecbp, eng_cal_pars=eng_cal_pars, amp_match_eff=cut_eff, chi2cut_pars_in=pin, chi2cut_pars_out=pout, rx=xo,ry=yo,re=xeo)
 
 plt.show()

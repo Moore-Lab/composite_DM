@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.special import erf
 
-m_phi = 0 ##5e-4
+m_phi = 0
 
 o = open("drdq_interp_grace_%.2e.pkl"%m_phi, 'rb')
 fdict = pickle.load(o)
@@ -62,17 +62,26 @@ h = dat['cts']
 sigma = np.sqrt(h)
 Exposuretime = dat['expo']*24*3600.
 
-cut_eff = 0.95  #efficiency of acceleromter cut
+cut_eff = 0.972 * 0.929 * 0.95  #efficiency of acceleromter cut, chi2 cut, amp cut
 Exposuretime *= cut_eff
 
 ## energy threshold
-analysis_thresh = 0.25 ##20% eff
+analysis_thresh = 0.1 #min calibration point
 sidx=np.argwhere( bc > analysis_thresh).flatten()[0]
 print(sidx)
 
 space = np.linspace(0, 2, 1500)
 
 mx_list = sorted(fdict.keys())
+
+## reduce number of points for speed in massless case
+if( m_phi == 0):
+    mx_list = np.array(mx_list)
+    skip_pts = np.logical_or( mx_list<9.9e4, (mx_list%10000)==0 )
+    mx_list = mx_list[skip_pts]
+    mx_list = mx_list[ np.logical_not(mx_list == 1.38950e8)]
+    mx_list = mx_list[ np.logical_not(mx_list == 1e4)]
+
 limits = np.zeros_like(mx_list)
 
 def gauss_fit(x, A, mu, sig):
@@ -87,8 +96,8 @@ def total_fit(x,A1,mu1,sig1,A2,mu2,sig2):
 def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
     return A1*(1+erf((x-mu1)/(np.sqrt(2)*sig1)))/2 + A2*(1+erf((np.log(x)-mu2)/(np.sqrt(2)*sig2)))/2
 
-in_loop_eff_pars = [0.70557531, 0.81466432, 0.31597654, 0.29442469, -1.07858784, 0.3547105]
-eff_corr_vec = ffnerf( bc, *in_loop_eff_pars)
+#in_loop_eff_pars = [0.70557531, 0.81466432, 0.31597654, 0.29442469, -1.07858784, 0.3547105]
+#eff_corr_vec = ffnerf( bc, *in_loop_eff_pars)
 
 ysig = np.sqrt(h)
 ysig[ysig==0] = 1
@@ -99,13 +108,13 @@ bp, bcov = opt.curve_fit( gauss_fit, bc[fpts], h[fpts]/cts_per_day, sigma=ysig[f
 #bp = spars
 print(bp)
 
-xx = np.linspace(0,2,1e3)
+xx = np.linspace(0,2,1000)
 binsize = bc[1]-bc[0]
 
-
+    
 for mi_idx, mx in enumerate(mx_list): #mx = 1000
     print("Working on mass: ", mx)
-    
+
     plt.figure()
     plt.errorbar(bc, h/cts_per_day, yerr = sigma/cts_per_day, fmt = "k.")#, color = "#7c1ee9")
     plt.plot(xx, gauss_fit(xx, *bp), 'k')
@@ -115,10 +124,10 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     plt.ylim((0.1, 3e5))
     #plt.show()
     
-    alpha_vec = np.logspace(-11, -4, 80)
+    alpha_vec = np.hstack((0,np.logspace(-11, -4, 80)))
     
     #qq = np.linspace(bc[0]-binsize/2, 10, 1e6)
-    qq = np.linspace(0,20,1e6)
+    qq = np.linspace(0,20,int(1e6))
     bedges = bc-binsize/2
     bedges = np.hstack((bedges, bc[-1]+binsize/2))
 
@@ -127,7 +136,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     def logL( model, data, bg):
         
         ## fit over best gaussian amplitude
-        galist = np.linspace(0.5,2,1e2)
+        galist = np.linspace(0.5,2,100)
 
         out_like = []
         for g in galist:
@@ -146,29 +155,31 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         if(alpha == 0):
             dm_rate = np.zeros_like(qq)
         else:
-            dm_rate = 10**(fdict[mx](np.log10(qq), np.log10(alpha)))
+            dm_rate = fdict[mx](np.log10(qq), np.log10(alpha))
             dm_rate[np.isnan(dm_rate)] = 0
 
-            ## now correct by angular distribution
-            ang_dist_idx = np.argwhere(dm_rate > 0)
-            if(len(ang_dist_idx)>0):
-                qmax = qq[ang_dist_idx[-1]]
-            else:
-                continue
-            qcorr = qq[qq<=qmax]
-            corr_fac = np.interp( qcorr/qmax, bcang, hang, left = 0, right = 0 )
-            qcorr_tot = np.zeros_like(dm_rate)
-            qcorr_tot[qq<=qmax] = corr_fac
-            norm = np.trapz( qcorr_tot, qq )
-            qcorr_tot /= norm
-            # print( np.trapz( qcorr_tot, qq ) )
-            
-            # plt.figure()
-            # plt.semilogy(qq, dm_rate)
-            # plt.plot(qq, qcorr_tot)
-            # plt.show()
 
-            dm_rate = dm_rate * qcorr_tot
+            ## this is now done in plot_results.py instead
+            # ## now correct by angular distribution
+            # ang_dist_idx = np.argwhere(dm_rate > 0)
+            # if(len(ang_dist_idx)>0):
+            #     qmax = qq[ang_dist_idx[-1]]
+            # else:
+            #     continue
+            # qcorr = qq[qq<=qmax]
+            # corr_fac = np.interp( qcorr/qmax, bcang, hang, left = 0, right = 0 )
+            # qcorr_tot = np.zeros_like(dm_rate)
+            # qcorr_tot[qq<=qmax] = corr_fac
+            # norm = np.trapz( qcorr_tot, qq )
+            # qcorr_tot /= norm
+            # # print( np.trapz( qcorr_tot, qq ) )
+            
+            # # plt.figure()
+            # # plt.semilogy(qq, dm_rate)
+            # # plt.plot(qq, qcorr_tot)
+            # # plt.show()
+
+            #dm_rate = dm_rate * qcorr_tot
             
         dm_vec = np.zeros_like(bc)
         bg_vec = np.zeros_like(bc)
@@ -178,8 +189,9 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             bg_vec[i] = gauss_fit(bc[i], *bp)*cts_per_day
             #bg_vec[i] = gauss2(bc[i],*popt)
 
-        ## eff corr
-        dm_vec *= eff_corr_vec
+        ## this is now done in plot_results.py
+        ### eff corr
+        #dm_vec *= eff_corr_vec
         
         if(False):
             plt.close('all')
@@ -206,7 +218,9 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             print("Found minimum")
             break
         if(logL_vec[j]<best_logL):
-            best_logL = logL_vec[j] 
+            best_logL = logL_vec[j]
+        if(logL_vec[j]<=best_logL+4):
+            upper_lim_curve = (dm_vec + best_ga*bg_vec)/cts_per_day
 
     plt.legend()
 
@@ -216,6 +230,17 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     plt.tight_layout(pad=0)
     plt.savefig("limit_plots_long/data_vs_dm_mx_%.1e_m_phi_%.2e.pdf"%(mx,m_phi))
     pdf.savefig()
+
+    plt.figure()
+    plt.errorbar(bc[sidx:], h[sidx:]/cts_per_day - bg_vec[sidx:]/cts_per_day, yerr = sigma[sidx:]/cts_per_day, fmt = "k.", label="no DM")#, color = "#7c1ee9")
+    plt.errorbar(bc[sidx:], h[sidx:]/cts_per_day - upper_lim_curve[sidx:], yerr = sigma[sidx:]/cts_per_day, fmt = "r.")#, color = "#7c1ee9")
+    plt.xlabel('dp [GeV]')
+    plt.ylabel('Residual from best fit [cts/bin]')
+    plt.title(r"DM Mass = %.1e GeV, $m_\phi = %.1e$"%(mx, m_phi))
+    plt.tight_layout(pad=0)
+    plt.savefig("limit_plots_long/data_vs_dm_mx_resid_%.1e_m_phi_%.2e.pdf"%(mx,m_phi))
+    pdf.savefig()
+    
     #plt.show()
     
     #plt.figure()
@@ -251,7 +276,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     logL_vec = logL_vec - minval
     
     limval = np.interp(4, logL_vec[midx:], alpha_vec[midx:], left=np.nan, right=np.nan)
-    xx = np.linspace(alpha_vec[midx], 1.1*limval, 1e3)
+    xx = np.linspace(alpha_vec[midx], 1.1*limval, 1000)
     
     fig = plt.figure()
     plt.plot( alpha_vec, logL_vec)

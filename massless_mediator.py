@@ -10,13 +10,13 @@ import pickle
 
 ## calculate dR/dq for a massless mediator
 
-mxlist = np.logspace(6, 9, 8)
+mxlist = np.hstack((np.logspace(1,4,48), np.logspace(5, 9, 5)))
 
-vesc = 1.835e-3 ## galactic escape velocity
+vesc = 1.815e-3 ## galactic escape velocity
 v0 = 7.34e-4 ## v0 parameter from Zurek group paper
-ve = 8.014e-4 ## ve parameter from Zurek group paper
+ve = 8.172e-4 ## ve parameter from Zurek group paper
 vmin = 1e-5
-nvels = 10
+nvels = 100
 
 rhoDM = 0.3 # dark matter mass density, GeV/cm^3
 
@@ -70,7 +70,7 @@ def nint( u, b, k, R, E):
 
 prefac = alpha_n**2 * N_T**2
 
-qq = np.linspace(0.1, 1e2, 1000)
+qq = np.linspace(0.05, 1e2, 10000)
 
 plt.figure()
 
@@ -241,8 +241,9 @@ for mx in mxlist:
             plt.plot( qq, dRdq)
             plt.plot( qq, dRdq_in)
             plt.show()
-        
-        dRdq = np.convolve(dRdq, gkern, mode='same')
+
+        ## now done in plot_results.py
+        #dRdq = np.convolve(dRdq, gkern, mode='same')
         out_dat[aidx,:] = dRdq
 
         outdir = "/Users/dcmoore/Google Drive/yale/uspheres/impulse/grace/data/mphi_0e+00"

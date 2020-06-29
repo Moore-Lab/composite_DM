@@ -13,8 +13,8 @@ mass = 9.4e-13 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
-repro = True
-remake_coinc_cut = True
+repro = False
+remake_coinc_cut = False
 
 ## don't use the 20200621 folder since the noise is 50% higher
 data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619",]#"data/DM_20200621"]
@@ -299,8 +299,8 @@ else:
 sig = 0.2818451718216727 ## from 20200616cal
 gpts = np.abs( joint_peaks[:,1] - joint_peaks[:,2] ) < 2*sig
 
-xe = np.linspace(0,8,1e2)
-ye = np.linspace(0,4e-17,1e2)
+xe = np.linspace(0,8,100)
+ye = np.linspace(0,4e-17,100)
 
 
 def gauss_fit(x, A, mu, sig):
@@ -327,9 +327,9 @@ for acol in accel_cols:
     yerrs=np.sqrt(ha)
     yerrs[0] = 1
     fpts = ha > 0.2*np.max(ha)
-    #bap, bacov = curve_fit( gauss_fit, bac[fpts], ha[fpts], sigma=yerrs[fpts], p0=[5e6, mu, sig])
-    bap = [5e6, mu, sig]
-    bb = np.linspace(bac[0], bac[-1], 1e3)
+    bap, bacov = curve_fit( gauss_fit, bac[fpts], ha[fpts], sigma=yerrs[fpts], p0=[5e6, mu, sig])
+    #bap = [5e6, mu, sig]
+    bb = np.linspace(bac[0], bac[-1], 1000)
     plt.plot( bb, gauss_fit(bb, *bap), 'r')
     cut_val = bap[1] + 2.5*np.abs(bap[2])
     yy = plt.ylim()
@@ -520,7 +520,7 @@ print("1s cut exposure loss: ", exposure/curr_exposure)
 
 gpts = np.logical_and(gpts, gpts2)
 
-binlist = np.linspace(0,10,2e2)
+binlist = np.linspace(0,10,200)
 
 
 ## chi2 cut
@@ -594,7 +594,7 @@ s_to_day = exposure/(24*3600)
 
 #plt.close('all')
 
-xx = np.linspace(0,2,1e3)
+xx = np.linspace(0,2,1000)
 
 plt.figure()
 #plt.errorbar( bc, hh/s_to_day, yerr=np.sqrt(hh)/s_to_day, fmt='r.')

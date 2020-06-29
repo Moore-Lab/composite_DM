@@ -4,7 +4,7 @@ from scipy.interpolate import UnivariateSpline as us
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 
-m_phi_list = [0.2, 5e-2, 2e-2, 5e-3, 5e-4,0]
+m_phi_list = [1e-1, 5e-2, 0]
 
 mchi = 1e-6 ## componenent mass, GeV
 
@@ -27,53 +27,24 @@ cs = get_color_map(len(m_phi_list))
 
 fig=plt.figure()
 
-#nugg_fig = plt.figure()
+nugg_fig = plt.figure()
 
 ff = np.load("fifth_force_limits.npz")
 
 for c,m in zip(cs, m_phi_list):
 
-    if( m>6e-3 ):
-        cdat = np.load("limit_plots_long/proj_data_%.2e.npz"%m)
-    else:
-        cdat = np.load("limit_plots_long/limit_data_%.2e.npz"%m)
+    cdat = np.load("limit_plots_long/limit_data_%.2e.npz"%m)
 
     gpts = np.logical_not(np.isnan(cdat['limits']))
-    gpts = np.logical_and( gpts, np.logical_or( cdat['mx_list']<200, cdat['mx_list']>300 ) )
-    #gpts = np.logical_and( gpts, cdat['limits']>1.05e-9)
     
-    
-    if( m == 0.2):
-        sfac = 0.05
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),4.2,1e2)
-        gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<1900, cdat['mx_list']>2200 ))    
-    elif( m == 5e-2):
-        sfac = 0.4
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),5,1e2)
-    elif( m == 5e-3):
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),6,1e2)
-        #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<12500, cdat['mx_list']>13500 ))    
-        sfac = 0.35
-    elif( m == 2e-3):
-        #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<140, cdat['mx_list']>250 ))
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),6,1e2)
-        sfac = 0.7
-    elif( m == 5e-4):
-        #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<140, cdat['mx_list']>250 ))
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),6,1e2)
-        sfac = 0.2
-    elif( m == 2e-2):
-        #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<100, cdat['mx_list']>200 ))
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),6,1e2)
-        sfac = 0.5
-    elif( m == 0):
-        #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<140, cdat['mx_list']>250 ))
-        #gpts = np.logical_and(gpts, np.logical_or( cdat['mx_list']<5.6e4, cdat['mx_list']>6.2e4 ))
-        #gpts = np.logical_and(gpts, cdat['mx_list']<1e5)
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,1e2)
+    if( m == 0):
+        skip_pts = []
+        for sp in skip_pts:
+            gpts = np.logical_and( gpts, np.logical_not(np.abs(cdat['mx_list']-sp)<1) )
+        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,100)
         sfac = 0.2
     else:
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),6,1e2)
+        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,100)
         sfac = 0.5
         
     spl = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=sfac )
@@ -81,8 +52,8 @@ for c,m in zip(cs, m_phi_list):
 
     plt.figure(fig.number)
 
-    if(m == 5e-4):
-        plt.loglog(xx, 10**spl(np.log10(xx)), label="$m_\phi \lesssim $ %.0e eV"%m, color=c)
+    if(m == 0):
+        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], '-', color=c)
     else:
         plt.loglog(xx, 10**spl(np.log10(xx)), label="$m_\phi$ = %.0e eV"%m, color=c)
         
@@ -90,11 +61,17 @@ for c,m in zip(cs, m_phi_list):
     
     plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c)
 
-    #if( False and m == 5e-2 ):
+    plt.figure(nugg_fig.number)
+    ff_limit = np.interp(m, ff['x'][::-1], ff['y'][::-1]) * 1/(4*np.pi)
+    plt.loglog(cdat['mx_list'][gpts], 1e3*ff_limit*cdat['mx_list'][gpts]/(4*np.pi*cdat['limits'][gpts]), '-', color=c)
+    plt.xlabel("DM Mass")
+    plt.ylabel("Constituent mass [MeV]")
+    
+    # if( True and m == 5e-2 ):
     #    np.savez("proj_mphi_%.0e.npz"%m, x=xx, y=10**spl(np.log10(xx)))
-    #else:
+    # else:
     #    np.savez("limits_mphi_%.0e.npz"%m, x=xx, y=10**spl(np.log10(xx)))
-    #np.savetxt("limits_mphi_%.0e.csv"%m, np.vstack(( cdat['mx_list'][gpts], cdat['limits'][gpts])).T, delimiter=",")
+    # np.savetxt("limits_mphi_%.0e.csv"%m, np.vstack(( cdat['mx_list'][gpts], cdat['limits'][gpts])).T, delimiter=",")
     
     #plt.loglog(cdat['mx_list'], cdat['limits'], label="$m_\phi$ = %.0e eV"%m)
 
@@ -125,7 +102,7 @@ plt.ylabel(r"Upper limit on neutron coupling, $\alpha_n$")
 plt.tight_layout(pad=0)
 plt.xlim([1e1, 1e9])
 plt.ylim([1e-12, 1e-5])
-fig.set_size_inches(5,4)
+#fig.set_size_inches(5,4)
 plt.tight_layout()
 
 plt.savefig("combined_limit_plot.pdf") #, transparent=True)
