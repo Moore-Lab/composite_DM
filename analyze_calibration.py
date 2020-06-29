@@ -18,19 +18,19 @@ mass = 1.03e-12 # kg
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
 repro = True # Set true to reprocess data, false to read from file
-Fernando_path = False
+Fernando_path = True
 
-calibration_date = "20200615"
+calibration_date = "20200617"
 
 if Fernando_path:
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
-                "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.1V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/1.6V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/6.4V"]
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200617/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
@@ -531,7 +531,7 @@ corr_fac_out = np.mean( mean_list[-3:,1]/gev_list[-3:] )
 
 ## now fit center and sigma of blob
 def cfit(x,A,mu,sig):
-    return x + A*(1+erf((mu-x)/sig))
+    return x + A*(1.+erf((mu-x)/sig))
 
 xx = np.linspace(0, gev_list[-1]*1.2, 1000)
 
@@ -545,7 +545,7 @@ plt.ylabel("Recontructed amplitude")
 
 ## fit calibraion to get search bias at low energy
 spars = [1.42721076, -0.5189387, 1]
-ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars, maxfev=10000)
+ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars,  maxfev=10000)
 #ecbp = spars
 plt.plot( xx, cfit(xx, *ecbp), 'k')
 
