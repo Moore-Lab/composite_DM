@@ -477,7 +477,7 @@ for i,v in enumerate(vlist):
     plt.figure(fig_in.number)
     hh, be = np.histogram( cdat[:,2], range=(-tthr,tthr), bins=50 )
     bc = be[:-1]+np.diff(be)/2
-    blpts = np.logical_or(bc < -0.02, bc > 0.02)
+    blpts = np.logical_or(bc < -0.015, bc > 0.015)
     baseline = np.mean(hh[blpts])
     plt.errorbar(bc, hh-baseline, yerr=np.sqrt(hh), fmt='o', label=str(gev_list[i]), color=cols[i])
     ## now gauss + const fit
@@ -496,7 +496,7 @@ for i,v in enumerate(vlist):
     plt.figure(fig_out.number)
     hh, be = np.histogram( cdat[:,4], range=(-tthr,tthr), bins=50 )
     bc = be[:-1]+np.diff(be)/2
-    blpts = np.logical_or(bc < -0.02, bc > 0.02)
+    blpts = np.logical_or(bc < -0.015, bc > 0.015)
     baseline = np.mean(hh[blpts])
     plt.errorbar(bc, hh-baseline, yerr=np.sqrt(hh), fmt='o', label=str(gev_list[i]), color=cols[i])
     ## now gauss + const fit
@@ -557,7 +557,17 @@ cbp, cbc = curve_fit(cfit, joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_f
 
 ## calculate the efficiency of the in/out loop amplitude matching criterion
 plt.figure()
-xvals, yvals = joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out
+#xvals, yvals = joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out
+# the for loop below is to remove negative values for when the code fails to find the peak at any of two detectors.
+xvals = []
+yvals = []
+for i in range(len(joint_peaks[:,1])):
+    if joint_peaks[:,1][i] > 0. and joint_peaks[:,3][i]  > 0.:
+        xvals.append(joint_peaks[:,1][i] /corr_fac_in)
+        yvals.append(joint_peaks[:,3][i] /corr_fac_out)
+xvals = np.array(xvals)
+yvals = np.array(yvals)
+
 plt.plot( xvals, yvals, 'k.', ms=1)
 #plt.plot( gev_list, gev_list, 'r:')
 plt.plot( xx, cfit(xx, *cbp), 'r:')
