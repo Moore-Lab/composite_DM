@@ -54,4 +54,16 @@ plt.plot(qvals, ffnerf2(qvals, *bpi), 'k', label='com')
 #plt.plot(qvals, eff_corr_vec1)
 #plt.plot(qvals, eff_corr_vec2)
 #plt.plot(qvals, (eff_corr_vec1+eff_corr_vec2)/2)
+
+
+### find also the energy bias calculation
+bcaly1, bcale1 = f1['bias_cal_data'], f1['bias_cal_err']
+bcaly2, bcale2 = f2['bias_cal_data'], f2['bias_cal_err']
+bcaly3, bcale3 = f3['bias_cal_data'], f3['bias_cal_err']
+
+plt.figure()
+plt.errorbar( rx1, bcaly1, yerr=bcale1, fmt='.')
+plt.errorbar( rx2, bcaly2, yerr=bcale2, fmt='.')
+plt.errorbar( rx3, bcaly3, yerr=bcale3, fmt='.')
+
 plt.show()

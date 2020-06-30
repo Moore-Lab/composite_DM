@@ -18,11 +18,18 @@ remake_coinc_cut = True
 Fernando_path = False
 
 ## don't use the 20200621 folder since the noise is 50% higher
-data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619",]#"data/DM_20200621"]
-data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/DM_20200615",
-             "/Volumes/My Passport for Mac/DM measurements/20200617/DM",
-             "/Volumes/My Passport for Mac/DM measurements/20200619/DM",]#"data/DM_20200621"]
-cal_list = ["calibration_file_20200615.npz","calibration_file_20200617.npz","calibration_file_20200619.npz"]#,"calibration_file_20200619.npz"]
+if(Fernando_path):
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/DM_20200615",
+                 "/Volumes/My Passport for Mac/DM measurements/20200617/DM",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/DM",]#"data/DM_20200621"]
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200617/important_npy"
+    path2 = path1
+else:
+    data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619",]#"data/DM_20200621"]
+    path1 = "data/20200615_to/calibration1e_HiZ_20200615"
+    path2 = "data"
+    
+cal_list = ["calibration_file_20200615.npz","calibration_file_20200617.npz","calibration_file_20200619.npz"]
 
 def getdata(fname, gain_error=1.0):
     ### Get bead data from a file.  Guesses whether it's a text file
@@ -78,14 +85,14 @@ def make_template(Fs, f0, gamma_total, dp, Mass):
     return [a, time_template]
 
 #vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("data")
-vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("/Volumes/My Passport for Mac/DM measurements/20200617/important_npy")
+vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance(path1)
 print("f0: ",f0)
 
 ## fix cal for now
 #vtom_in *= np.sqrt(2) ##/1.04
 #vtom_out *= np.sqrt(2) ##/1.05
 
-gam = get_gammas("/Volumes/My Passport for Mac/DM measurements/20200617/important_npy")
+gam = get_gammas(path2)
 temp = make_template(Fs, f0, gam, 1, mass)
 
 #tempt = np.hstack((np.zeros(500), temp[0]))

@@ -18,9 +18,9 @@ mass = 1.03e-12 # kg
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
 repro = True # Set true to reprocess data, false to read from file
-Fernando_path = True
+Fernando_path = False
 
-calibration_date = "20200617"
+calibration_date = "20200615"
 
 if Fernando_path:
     data_list = ["/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.1V",
@@ -544,6 +544,7 @@ plt.title("Corr fac inloop: %.2f, corr fac outloop: %.2f"%(corr_fac_in, corr_fac
 plt.xlabel("Calibration pulse amplitude [GeV]")
 plt.ylabel("Recontructed amplitude")
 
+bcaly, bcale = mean_list[:,0]/corr_fac_in, mean_list[:,2]/corr_fac_in
 
 ## fit calibraion to get search bias at low energy
 spars = [1.42721076, -0.5189387, 1]
@@ -658,6 +659,6 @@ chi2eff = np.sum(pass_cut)/len(pass_cut)
 
 ## now save all parameters to a calibration file
 eng_cal_pars = [corr_fac_in, corr_fac_out]
-np.savez("calibration_file_"+calibration_date+".npz", reconeff_params=bpi, chi2eff=chi2eff, bias_cal_params=ecbp, eng_cal_pars=eng_cal_pars, amp_match_eff=cut_eff, chi2cut_pars_in=pin, chi2cut_pars_out=pout, rx=xo,ry=yo,re=xeo)
+np.savez("calibration_file_"+calibration_date+".npz", reconeff_params=bpi, chi2eff=chi2eff, bias_cal_params=ecbp, eng_cal_pars=eng_cal_pars, amp_match_eff=cut_eff, chi2cut_pars_in=pin, chi2cut_pars_out=pout, rx=xo,ry=yo,re=xeo, bias_cal_data=bcaly, bias_cal_err=bcale)
 
 plt.show()
