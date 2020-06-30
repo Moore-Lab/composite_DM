@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.special import erf
 
-m_phi = 5e-2
+m_phi = 0
 
 o = open("drdq_interp_grace_%.2e.pkl"%m_phi, 'rb')
 fdict = pickle.load(o)

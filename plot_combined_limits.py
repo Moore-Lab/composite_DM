@@ -127,7 +127,7 @@ plt.ylabel(r"Upper limit on neutron coupling, $\alpha_n$")
 #plt.title("Limits from 1 ng sphere, exposure = 20.6 min")
 plt.tight_layout(pad=0)
 plt.xlim([1e1, 1e9])
-plt.ylim([1e-12, 1e-5])
+plt.ylim([1e-10, 1e-5])
 #fig.set_size_inches(5,4)
 plt.tight_layout()
 

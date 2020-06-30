@@ -10,7 +10,7 @@ import pickle
 
 ## calculate dR/dq for a massless mediator
 
-mxlist = np.hstack((np.logspace(1,4,48), np.logspace(5, 9, 5)))
+mxlist = np.hstack((np.logspace(np.log10(60),4,36), np.logspace(5, 9, 5)))
 
 vesc = 1.815e-3 ## galactic escape velocity
 v0 = 7.34e-4 ## v0 parameter from Zurek group paper
@@ -74,7 +74,7 @@ qq = np.linspace(0.05, 1e2, 10000)
 
 plt.figure()
 
-aa = np.logspace(-11, -4, 8)
+aa = np.logspace(-11, -4, 30)
 
 qqmat, aamat = np.meshgrid(qq,aa)
 
