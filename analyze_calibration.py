@@ -458,6 +458,13 @@ cols = get_color_map(len(vlist))
 ## list of kicks in GeV/c (what we expect)
 gev_list = 200*vlist*1e-4/(0.0033)*(1.6e-19) * SI_to_GeV
 
+gev_errl = 200*vlist*1e-4/(0.0037)*(1.6e-19) * SI_to_GeV
+gev_errh = 200*vlist*1e-4/(0.0029)*(1.6e-19) * SI_to_GeV
+
+print("cal amplitudes")
+print(gev_list)
+print((gev_errh-gev_errl)/2)
+
 for i,v in enumerate(vlist):
     print("Working on volts: ", v)
     cdat = joint_peaks[joint_peaks[:,5] == v, :]
@@ -549,8 +556,10 @@ bcaly, bcale = mean_list[:,0]/corr_fac_in, mean_list[:,2]/corr_fac_in
 ## fit calibraion to get search bias at low energy
 spars = [0.299019, 0.56726896, 0.93185983]
 ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars,  maxfev=10000)
-#ecbp = spars
+ecbp = [ 0.52721076, -0.04189387, 1.62850192]
 plt.plot( xx, cfit(xx, *ecbp), 'k')
+fern = [0.40976814, 0.23837576, 1.15578885]
+plt.plot( xx, cfit(xx, *fern), 'k:')
 
 print("Energy cal params: ", ecbp)
 

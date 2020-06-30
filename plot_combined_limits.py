@@ -4,7 +4,7 @@ from scipy.interpolate import UnivariateSpline as us
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 
-m_phi_list = [5e-1, 1e-1, 5e-2, 5e-3, 5e-4, 0]
+m_phi_list = [1e-1, 0]
 
 mchi = 1e-6 ## componenent mass, GeV
 
@@ -38,25 +38,19 @@ for c,m in zip(cs, m_phi_list):
     gpts = np.logical_not(np.isnan(cdat['limits']))
     
     if( m == 0):
-        skip_pts = []
+        ## bad points from spectra prodcued by plot_results.py
+        skip_pts = [90.7, 456, 528, 582, 612, 709, 822, 873, 1986, 1e6, 2154490]
         for sp in skip_pts:
-            gpts = np.logical_and( gpts, np.logical_not(np.abs(cdat['mx_list']-sp)<1) )
+            gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
         xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,100)
-        sfac = 0.1
-        cdat2 = np.load("limit_plots_long/limit_data_%.2e_grace.npz"%m)
-        
-    elif( m == 5e-3):
-        gpts = np.logical_and( gpts, np.logical_not(cdat['limits']<1e-8) )
-        skip_pts = [2512,]
+        sfac = 0.025
+    elif( m == 1e-1):
+        ## bad points from spectra prodcued by plot_results.py
+        skip_pts = [68, 78, 90.7, 105, 121.6, 140.9, 163.2, 218.9, 189, 253.7, 293.8, 340.3, 394.2, 456, 612, 2664,3086]
         for sp in skip_pts:
-            gpts = np.logical_and( gpts, np.logical_not(np.abs(cdat['mx_list']-sp)<1) )
-        sfac = 0.5
-    elif( m == 5e-1):
-        gpts = np.logical_and( gpts, np.logical_not(cdat['limits']<1e-8) )
-        skip_pts = [3981,]
-        for sp in skip_pts:
-            gpts = np.logical_and( gpts, np.logical_not(np.abs(cdat['mx_list']-sp)<1) )
-        sfac = 0.5
+            gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
+        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,100)
+        sfac = 1.5   
     else:
         xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,100)
         sfac = 0.5
@@ -69,27 +63,23 @@ for c,m in zip(cs, m_phi_list):
     if(m == 0):
         ## finely sampled, so only spline smooth above the step
         d1 = 10**spl(np.log10(xx))
-        spl2 = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=0 )
-        spl3 = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=0, k=1 )
-        d2 = 10**spl2(np.log10(xx))
+        spl3 = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=1, k=3 )
         d3 = 10**spl3(np.log10(xx))
-        dd = np.logical_and( xx>560, xx<1e4 )
-        dd3 = xx>1e4
-        d2[dd] = d1[dd]
-        d2[dd3] = d3[dd3]
-        #plt.loglog(xx, d2, label="$m_\phi$ = %.0e eV"%m, color=c)
-        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], '-', color=c, mfc='none')
-        plt.loglog(cdat2['mx_list'], cdat2['limits'], ':', color=c, mfc='none')
-        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, label="$m_\phi$ = %.0e eV"%m)
+        #dd = np.logical_and( xx>560, xx<1e4 )
+        sidx = np.argwhere( xx > 1e3 )[0][0]
+        minidx = np.argmin( np.abs( d3[sidx:]-d1[sidx:]))
+        dd3 = xx<1e3
+        d3[:(sidx+minidx)] = d1[:(sidx+minidx)]
+        plt.loglog(xx, d3, label="$m_\phi$ = %.0e eV"%m, color=c)
+        #plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, mfc='none')
     else:
-        print("")
-        #plt.loglog(xx, 10**spl(np.log10(xx)), label="$m_\phi$ = %.0e eV"%m, color=c)
+        plt.loglog(xx, 10**spl(np.log10(xx)), label="$m_\phi$ = %.0e eV"%m, color=c)
         
         #plt.loglog(xx, 10**np.polyval(p,np.log10(xx)), label="$m_\phi$ = %.0e eV"%m)
     
-        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], '-', color=c, mfc='none')
+        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, mfc='none')
 
-        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, label="$m_\phi$ = %.0e eV"%m)
+        #plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, label="$m_\phi$ = %.0e eV"%m)
         
     plt.figure(nugg_fig.number)
     ff_limit = np.interp(m, ff['x'][::-1], ff['y'][::-1] )
@@ -132,8 +122,8 @@ plt.xlabel("Dark matter mass, $m_X$ [GeV]")
 plt.ylabel(r"Upper limit on neutron coupling, $\alpha_n$")
 #plt.title("Limits from 1 ng sphere, exposure = 20.6 min")
 plt.tight_layout(pad=0)
-plt.xlim([1e1, 1e9])
-plt.ylim([1e-10, 1e-5])
+plt.xlim([1e1, 1e8])
+plt.ylim([5e-10, 1e-5])
 #fig.set_size_inches(5,4)
 plt.tight_layout()
 

@@ -7,6 +7,7 @@ from scipy.optimize import curve_fit
 import datetime as dt
 import matplotlib.dates
 from scipy.special import erf
+import scipy.stats
 
 Fs = 1e4
 mass = 1.03e-12 # kg
@@ -550,7 +551,7 @@ chi2_cut = np.logical_and( joint_peaks[:,3] < np.polyval(pin, joint_peaks[:,1]),
 
 
 ## apply energy calibration (accounts for search bias) -- fix hardcoded parameters
-ebpc = [ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
+ebpc = [0.40976814, 0.23837576, 1.15578885] ##[ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
 #ebpc = np.load("combined_recon_cal.npy") ## from find_combined_cal_params.py
 def cfit(x,A,mu,sig):
     return x + A*(1+erf((mu-x)/sig))
@@ -619,6 +620,17 @@ plt.xlabel("dp [GeV]")
 plt.ylabel("counts/(%.2f GeV day)"%bs)
 #plt.step(be[:-1], hh, where='post', color='k')
 #plt.step(be2[:-1], hh2, where='post', color='r')
+
+## calculate theory efficiency of 1 s cut
+tot_cts = np.sum(e_cal[gpts] > 1)
+print("Total counts above 1 GeV: ", tot_cts)
+
+muc = 2*tot_cts/exposure
+print("mean counts per 2 s", muc)
+random_eff0 = scipy.stats.poisson.cdf(0, muc)
+random_eff1 = scipy.stats.poisson.cdf(1, muc)
+random_eff2 = scipy.stats.poisson.cdf(2, muc)
+print("random pileup eff: ", random_eff0, random_eff1, random_eff2)
 
 np.savez("dm_data.npz", dp=bc, cts = hh2, expo=s_to_day)
 

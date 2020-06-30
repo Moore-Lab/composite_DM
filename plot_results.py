@@ -10,7 +10,7 @@ import pickle
 from scipy.special import erf
 from matplotlib.backends.backend_pdf import PdfPages
 
-m_phi = 1e-1
+m_phi = 1e-3
 
 pdf = PdfPages('dm_spectra/dm_spec_m_phi_%.2e.pdf'%m_phi)
 

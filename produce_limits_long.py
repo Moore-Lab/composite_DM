@@ -75,12 +75,12 @@ space = np.linspace(0, 2, 1500)
 mx_list = sorted(fdict.keys())
 
 ## reduce number of points for speed in massless case
-if( m_phi == 0):
-    mx_list = np.array(mx_list)
-    skip_pts = np.logical_or( mx_list<9.9e4, (mx_list%10000)==0 )
-    mx_list = mx_list[skip_pts]
-    mx_list = mx_list[ np.logical_not(mx_list == 1.38950e8)]
-    mx_list = mx_list[ np.logical_not(mx_list == 1e4)]
+#if( m_phi == 0):
+#    mx_list = np.array(mx_list)
+    #skip_pts = np.logical_or( mx_list<9.9e4, (mx_list%10000)==0 )
+    #mx_list = mx_list[skip_pts]
+    #mx_list = mx_list[ np.logical_not(mx_list == 1.38950e8)]
+    #mx_list = mx_list[ np.logical_not(mx_list == 1e4)]
 
 limits = np.zeros_like(mx_list)
 
