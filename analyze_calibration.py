@@ -547,7 +547,7 @@ plt.ylabel("Recontructed amplitude")
 bcaly, bcale = mean_list[:,0]/corr_fac_in, mean_list[:,2]/corr_fac_in
 
 ## fit calibraion to get search bias at low energy
-spars = [1.42721076, -0.5189387, 1]
+spars = [0.299019, 0.56726896, 0.93185983]
 ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars,  maxfev=10000)
 #ecbp = spars
 plt.plot( xx, cfit(xx, *ecbp), 'k')

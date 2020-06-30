@@ -61,9 +61,21 @@ bcaly1, bcale1 = f1['bias_cal_data'], f1['bias_cal_err']
 bcaly2, bcale2 = f2['bias_cal_data'], f2['bias_cal_err']
 bcaly3, bcale3 = f3['bias_cal_data'], f3['bias_cal_err']
 
+cdat = (bcaly1 + bcaly2 + bcaly3)/3
+cerr = np.sqrt( bcale1 + bcale2 + bcale3)/3
+
+def cfit(x,A,mu,sig):
+    return x + A*(1.+erf((mu-x)/sig))
+spars = [0.299019, 0.56726896, 0.93185983]
+ecbp, ecbc = curve_fit(cfit, rx1, cdat,  p0=spars,  maxfev=10000)
+
 plt.figure()
 plt.errorbar( rx1, bcaly1, yerr=bcale1, fmt='.')
 plt.errorbar( rx2, bcaly2, yerr=bcale2, fmt='.')
 plt.errorbar( rx3, bcaly3, yerr=bcale3, fmt='.')
+plt.errorbar( rx1, cdat, yerr=cerr, fmt='k.')
+plt.plot(qvals, cfit(qvals, *ecbp), 'k')
+
+np.save("combined_recon_cal.npy", ecbp)
 
 plt.show()
