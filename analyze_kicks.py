@@ -15,6 +15,7 @@ SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
 repro = True
 remake_coinc_cut = True
+Fernando_path = False
 
 ## don't use the 20200621 folder since the noise is 50% higher
 data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619",]#"data/DM_20200621"]

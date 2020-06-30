@@ -263,8 +263,8 @@ if(repro):
 
         ## fudge factor of 1.1 accounts for amplitude loss in filter frequency for finding envelope
         ## don't worry about the fudge factor, it's fine...
-        incorrf *= 1.1*SI_to_GeV #*np.sqrt(2)
-        outcorrf *= 1.1*SI_to_GeV #*np.sqrt(2)
+        incorrf *= 1.1*SI_to_GeV * np.sqrt(2)
+        outcorrf *= 1.1*SI_to_GeV * np.sqrt(2)
         inpeaks_orig = sp.find_peaks(incorrf)[0]
         outpeaks_orig = sp.find_peaks(outcorrf)[0]
 
