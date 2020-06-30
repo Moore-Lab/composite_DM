@@ -4,7 +4,7 @@ from scipy.interpolate import UnivariateSpline as us
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 
-m_phi_list = [5e-1, 5e-2, 5e-3, 5e-4, 0]
+m_phi_list = [5e-1, 1e-1, 5e-2, 5e-3, 5e-4, 0]
 
 mchi = 1e-6 ## componenent mass, GeV
 
@@ -92,8 +92,11 @@ for c,m in zip(cs, m_phi_list):
         plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, label="$m_\phi$ = %.0e eV"%m)
         
     plt.figure(nugg_fig.number)
-    ff_limit = np.interp(m, ff['x'][::-1], ff['y'][::-1]) * 1/(4*np.pi)
+    ff_limit = np.interp(m, ff['x'][::-1], ff['y'][::-1] )
     plt.loglog(cdat['mx_list'][gpts], 1e3*ff_limit*cdat['mx_list'][gpts]/(4*np.pi*cdat['limits'][gpts]), '-', color=c)
+
+    print("ff limit: ", m, ff_limit) 
+    
     plt.xlabel("DM Mass")
     plt.ylabel("Constituent mass [MeV]")
     
