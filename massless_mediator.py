@@ -74,7 +74,7 @@ qq = np.linspace(0.05, 1e2, 10000)
 
 plt.figure()
 
-aa = np.logspace(-11, -4, 30)
+aa = np.logspace(-11, -4, 8)
 
 qqmat, aamat = np.meshgrid(qq,aa)
 
@@ -161,7 +161,7 @@ for mx in mxlist:
             p = mx * vel
             
             ## cross section outside the sphere
-            sigvals = (N_T*alpha)**2 * (2*np.pi) * 1/qq**3 * 1/vel * f_halo(vel)
+            sigvals = (N_T*alpha)**2 * 2*np.pi * 1/qq**3 * 1/vel * f_halo(vel)
             Ecm = 0.5*mx*vel**2
             k = alpha * N_T  ##/(4*np.pi) 4pi is already in the def of alpha
             bmin = 5e-4/hbarc ## 

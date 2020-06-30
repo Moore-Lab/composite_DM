@@ -10,7 +10,7 @@ import pickle
 from scipy.special import erf
 from matplotlib.backends.backend_pdf import PdfPages
 
-m_phi = 0
+m_phi = 5e-2
 
 pdf = PdfPages('dm_spectra/dm_spec_m_phi_%.2e.pdf'%m_phi)
 
@@ -238,7 +238,7 @@ for mx in mxlist:
 
     if(j==0): continue
         
-    interp_fun = interp2d(np.log10(qvals), np.log10(avals), out_dat, fill_value=-10) #, kind='cubic')
+    interp_fun = interp2d(np.log10(qvals), np.log10(avals), out_dat, fill_value=0) #, kind='cubic')
 
     x = np.logspace(np.log10(0.05),1,1000)
     y = np.logspace( np.log10(avals[0]), np.log10(avals[-1]), 100)

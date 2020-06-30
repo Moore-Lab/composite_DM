@@ -41,6 +41,8 @@ cerr = np.sqrt( re1**2 + re2**2 + re3**2 )/3.
 bpi, bci = curve_fit(ffnerf2, rx1, cdat, p0 = [1.46, 0.35, 0.46, 0.3])
 print (bpi)
 
+print(bpi)
+
 np.save("combined_recon_fit.npy", bpi)
 
 plt.figure()
