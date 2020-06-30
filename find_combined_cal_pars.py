@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 
 ## find the combined paramters from both calibrations
 
-qvals = np.linspace(0.05, 14, 10000)
+qvals = np.linspace(0, 14, 10000)
 
 f1 = np.load("calibration_file_20200615.npz")
 f2 = np.load("calibration_file_20200619.npz")
@@ -64,15 +64,22 @@ bcaly3, bcale3 = f3['bias_cal_data'], f3['bias_cal_err']
 cdat = (bcaly1 + bcaly2 + bcaly3)/3
 cerr = np.sqrt( bcale1 + bcale2 + bcale3)/3
 
+## add 0 energy point from analyze_kicks:
+cdat = np.hstack((0.51, cdat))
+cerr = np.hstack((0.02, cerr))
+rx1 = np.hstack((0, rx1))
+
 def cfit(x,A,mu,sig):
-    return x + A*(1.+erf((mu-x)/sig))
-spars = [0.299019, 0.56726896, 0.93185983]
-ecbp, ecbc = curve_fit(cfit, rx1, cdat,  p0=spars,  maxfev=10000)
+    return x + np.abs(A)*(1.+erf((mu-x)/sig))
+#spars = [0.299019, 0.56726896, 0.93185983]
+spars = [ 0.52721076, -0.04189387, 1.62850192]
+ecbp, ecbc = curve_fit(cfit, rx1, cdat,  sigma=cerr, p0=spars,  maxfev=10000)
+
 
 plt.figure()
-plt.errorbar( rx1, bcaly1, yerr=bcale1, fmt='.')
+plt.errorbar( rx2, bcaly1, yerr=bcale1, fmt='.')
 plt.errorbar( rx2, bcaly2, yerr=bcale2, fmt='.')
-plt.errorbar( rx3, bcaly3, yerr=bcale3, fmt='.')
+plt.errorbar( rx2, bcaly3, yerr=bcale3, fmt='.')
 plt.errorbar( rx1, cdat, yerr=cerr, fmt='k.')
 plt.plot(qvals, cfit(qvals, *ecbp), 'k')
 

@@ -13,8 +13,8 @@ mass = 1.03e-12 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
-repro = True
-remake_coinc_cut = True
+repro = False
+remake_coinc_cut = False
 Fernando_path = False
 
 ## don't use the 20200621 folder since the noise is 50% higher
@@ -550,8 +550,8 @@ chi2_cut = np.logical_and( joint_peaks[:,3] < np.polyval(pin, joint_peaks[:,1]),
 
 
 ## apply energy calibration (accounts for search bias) -- fix hardcoded parameters
-#ebpc = [ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
-ebpc = np.load("combined_recon_cal.npy") ## from find_combined_cal_params.py
+ebpc = [ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
+#ebpc = np.load("combined_recon_cal.npy") ## from find_combined_cal_params.py
 def cfit(x,A,mu,sig):
     return x + A*(1+erf((mu-x)/sig))
 
@@ -613,7 +613,7 @@ plt.figure()
 plt.errorbar( bc, hh2/s_to_day, yerr=np.sqrt(hh2)/s_to_day, fmt='k.')
 #plt.plot(xx, total_fit(xx, *bp), 'k')
 plt.yscale('log')
-plt.xlim([0,10])
+plt.xlim([0,5])
 plt.ylim((0.1, 3e5))
 plt.xlabel("dp [GeV]")
 plt.ylabel("counts/(%.2f GeV day)"%bs)

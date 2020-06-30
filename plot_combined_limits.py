@@ -43,6 +43,8 @@ for c,m in zip(cs, m_phi_list):
             gpts = np.logical_and( gpts, np.logical_not(np.abs(cdat['mx_list']-sp)<1) )
         xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,100)
         sfac = 0.1
+        cdat2 = np.load("limit_plots_long/limit_data_%.2e_grace.npz"%m)
+        
     elif( m == 5e-3):
         gpts = np.logical_and( gpts, np.logical_not(cdat['limits']<1e-8) )
         skip_pts = [2512,]
@@ -76,8 +78,9 @@ for c,m in zip(cs, m_phi_list):
         d2[dd] = d1[dd]
         d2[dd3] = d3[dd3]
         #plt.loglog(xx, d2, label="$m_\phi$ = %.0e eV"%m, color=c)
-        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts]/1.4, '-', color=c, mfc='none')
-        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts]/1.4, 'o', color=c, label="$m_\phi$ = %.0e eV"%m)
+        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], '-', color=c, mfc='none')
+        plt.loglog(cdat2['mx_list'], cdat2['limits'], ':', color=c, mfc='none')
+        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, label="$m_\phi$ = %.0e eV"%m)
     else:
         print("")
         #plt.loglog(xx, 10**spl(np.log10(xx)), label="$m_\phi$ = %.0e eV"%m, color=c)

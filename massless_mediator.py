@@ -25,9 +25,10 @@ alpha_n = 1e-10
 
 hbarc = 0.2e-13 # GeV cm
 c = 3e10 # cm/s
-conv_fac = hbarc**2 * c * 3600  ## to give rate in cts/(GeV hr)
 
 sig = 0.14 ## sigma of inloop
+emp_xsec_fac = 4.70 ## factor needed to account for sphere interior from numerical
+                    ## comparison to exact code
 
 def get_color_map( n ):
     jet = plt.get_cmap('jet') 
@@ -84,6 +85,7 @@ qsp = qq[1]-qq[0]
 qkern = np.arange(-3*sig, 3*sig, qsp)
 gkern = 1./(np.sqrt(2*np.pi)*sig) * np.exp( -qkern**2/(2*sig**2) ) * qsp
 
+conv_fac = hbarc**2 * c * 3600 * emp_xsec_fac**2  ## to give rate in cts/(GeV hr)
 
 ## now calculate the velocity distribution, following https://journals.aps.org/prd/pdf/10.1103/PhysRevD.100.035025
 ## note there is a typo in the sign of the exponential in the above paper
@@ -167,7 +169,7 @@ for mx in mxlist:
             bmin = 5e-4/hbarc ## 
             qmax = 2*mx*vel/np.sqrt(4*Ecm**2 * bmin**2/k**2 + 1)
             sigvals[qq > qmax] = 0
-            dRdq_mat[:,vidx] = sigvals * nX * conv_fac
+            dRdq_mat[:,vidx] = sigvals * nX * conv_fac 
 
             # if(aidx == 0):
             #     ##now inside

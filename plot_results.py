@@ -10,7 +10,7 @@ import pickle
 from scipy.special import erf
 from matplotlib.backends.backend_pdf import PdfPages
 
-m_phi = 0
+m_phi = 1e-1
 
 pdf = PdfPages('dm_spectra/dm_spec_m_phi_%.2e.pdf'%m_phi)
 
@@ -134,8 +134,9 @@ qsp = qvals[1]-qvals[0]
 qkern = np.arange(-3*sig, 3*sig, qsp)
 gkern = 1./(np.sqrt(2*np.pi)*sig) * np.exp( -qkern**2/(2*sig**2) ) * qsp
 
-def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
-    return A1*(1+erf((x-mu1)/(np.sqrt(2)*sig1)))/2 + A2*(1+erf((np.log(x)-mu2)/(np.sqrt(2)*sig2)))/2
+def ffnerf(x, A1, mu1, sig1, A2):
+    return A1*(1.+erf((x-mu1)/(np.sqrt(2.)*sig1)))/2. + A2
+
 ## efficiency correction
 bpi = np.load("combined_recon_fit.npy")
 
