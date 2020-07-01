@@ -14,16 +14,16 @@ mass = 1.03e-12 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
-repro = False
-remake_coinc_cut = False
-Fernando_path = False
+repro = True
+remake_coinc_cut = True
+Fernando_path = True
 
 ## don't use the 20200621 folder since the noise is 50% higher
 if(Fernando_path):
     data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/DM_20200615",
                  "/Volumes/My Passport for Mac/DM measurements/20200617/DM",
                  "/Volumes/My Passport for Mac/DM measurements/20200619/DM",]#"data/DM_20200621"]
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200617/important_npy"
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
     path2 = path1
 else:
     data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619",]#"data/DM_20200621"]

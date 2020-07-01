@@ -12,25 +12,32 @@ import matplotlib.colors as colors
 from scipy.special import erf
 from scipy.interpolate import UnivariateSpline
 
+# the ecbp is fixed down below, this is a clear choice that accomodates well the data and dont affect the limit plot by a visible amount
+
 Fs = 1e4
 mass = 1.03e-12 # kg
 #flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
 repro = True # Set true to reprocess data, false to read from file
-Fernando_path = False
+Fernando_path = True
+
+Make_npy_FIG1 = False # use it as false for calibration
 
 calibration_date = "20200615"
 
 if Fernando_path:
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.1V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.4V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.8V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/1.6V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/3.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/6.4V"]
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200617/important_npy"
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.1V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/1.6V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/6.4V"]
+    if Make_npy_FIG1:
+        data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",]
+
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
@@ -144,6 +151,8 @@ temp = make_template(Fs, f0, gam, 1, mass)
 #tempt = np.hstack((np.zeros(500), temp[0]))
 tempt = temp[0]
 b,a = sp.butter(3, np.array([65., 115.])/(Fs/2), btype='bandpass')
+if Make_npy_FIG1:
+    b,a = sp.butter(3, np.array([5., 350.])/(Fs/2), btype='bandpass')
 b2,a2 = sp.butter(3, (f0/2)/(Fs/2), btype='lowpass')
 tempf = sp.filtfilt(b,a,tempt)
 
@@ -389,7 +398,7 @@ if(repro):
             mon *= np.max(incorrf[inpeaks])/np.max(mon)
 
             #plt.figure()
-            plt.plot( tvec, mon, 'k')      
+            plt.plot( tvec, mon, 'k')
             
             plt.figure()
             plt.plot( tvec, outdatf)
@@ -414,7 +423,10 @@ if(repro):
             #plt.plot( tt+0.5e-3, tempt, label="Fernando's template" )
             plt.plot( tt[120:]+0.5e-3, tempt[120:], 'k:', label="Template" )
             plt.legend(loc="upper right")
-            
+
+            if Make_npy_FIG1:
+                np.save("fig1_info_filter_5to350Hz.npy", [stackdati, -stackdato, tvec[:680]-0.02, tempt[120:], tt[120:]+0.5e-3, tvec, indatf, outdatf, mon])
+
             #newi_psd, newi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
             #newo_psd, newo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))
             
@@ -556,9 +568,10 @@ bcaly, bcale = mean_list[:,0]/corr_fac_in, mean_list[:,2]/corr_fac_in
 ## fit calibraion to get search bias at low energy
 spars = [0.299019, 0.56726896, 0.93185983]
 ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars,  maxfev=10000)
-ecbp = [ 0.52721076, -0.04189387, 1.62850192]
+ecbp = [ 0.52721076, -0.04189387, 1.62850192] # this is what david finds
 plt.plot( xx, cfit(xx, *ecbp), 'k')
-fern = [0.40976814, 0.23837576, 1.15578885]
+fern = [0.40976814, 0.23837576, 1.15578885] # this is what fernando finds and it is hard coded in the analysis code too. Both david and fernando number result in similar results.
+ecbp = fern
 plt.plot( xx, cfit(xx, *fern), 'k:')
 
 print("Energy cal params: ", ecbp)
