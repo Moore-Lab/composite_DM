@@ -4,7 +4,7 @@ from scipy.interpolate import UnivariateSpline as us
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 
-m_phi_list = [1e-1, 0]
+m_phi_list = [1e-1, 1e-2, 0]
 
 mchi = 1e-6 ## componenent mass, GeV
 
@@ -39,20 +39,29 @@ for c,m in zip(cs, m_phi_list):
     
     if( m == 0):
         ## bad points from spectra prodcued by plot_results.py
-        skip_pts = [90.7, 456, 528, 582, 612, 709, 822, 873, 1986, 1e6, 2154490]
+        skip_pts = [] #[90.7, 456, 528, 582, 612, 709, 822, 873, 1986, 1e6, 2154490]
         for sp in skip_pts:
             gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,100)
+        xx = np.logspace(np.log10(50),9,100)
         sfac = 0.025
+    elif( m == 1e-2):
+        ## bad points from spectra prodcued by plot_results.py
+        skip_pts = [] #[456, 528, 582, 612,1278]
+        if(len(skip_pts)>0):
+            for sp in skip_pts:
+                gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
+        xx = np.logspace(np.log10(50),9,100)
+        sfac = 0.025   
     elif( m == 1e-1):
         ## bad points from spectra prodcued by plot_results.py
-        skip_pts = [68, 78, 90.7, 105, 121.6, 140.9, 163.2, 218.9, 189, 253.7, 293.8, 340.3, 394.2, 456, 612, 2664,3086]
-        for sp in skip_pts:
-            gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,100)
-        sfac = 1.5   
+        skip_pts = [] #[113,]
+        if(len(skip_pts)>0):
+            for sp in skip_pts:
+                gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
+        xx = np.logspace(np.log10(50),9,100)
+        sfac = 0.025   
     else:
-        xx = np.logspace(np.log10(cdat['mx_list'][gpts][0]),9,100)
+        xx = np.logspace(np.log10(50),9,100)
         sfac = 0.5
         
     spl = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=sfac )
@@ -66,12 +75,11 @@ for c,m in zip(cs, m_phi_list):
         spl3 = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=1, k=3 )
         d3 = 10**spl3(np.log10(xx))
         #dd = np.logical_and( xx>560, xx<1e4 )
-        sidx = np.argwhere( xx > 1e3 )[0][0]
+        sidx = np.argwhere( xx > 2e3 )[0][0]
         minidx = np.argmin( np.abs( d3[sidx:]-d1[sidx:]))
-        dd3 = xx<1e3
         d3[:(sidx+minidx)] = d1[:(sidx+minidx)]
         plt.loglog(xx, d3, label="$m_\phi$ = %.0e eV"%m, color=c)
-        #plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, mfc='none')
+        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, mfc='none')
     else:
         plt.loglog(xx, 10**spl(np.log10(xx)), label="$m_\phi$ = %.0e eV"%m, color=c)
         
