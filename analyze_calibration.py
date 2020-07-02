@@ -22,7 +22,7 @@ mass = 1.03e-12 # kg
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
 repro = True # Set true to reprocess data, false to read from file
-Fernando_path = False
+Fernando_path = True
 
 Make_npy_FIG1 = False # use it as false for calibration
 
@@ -154,7 +154,7 @@ temp = make_template(Fs, f0, gam, 1, mass)
 tempt = temp[0]
 b,a = sp.butter(3, np.array([65., 115.])/(Fs/2), btype='bandpass')
 if Make_npy_FIG1:
-    b,a = sp.butter(3, np.array([5., 350.])/(Fs/2), btype='bandpass')
+    b,a = sp.butter(3, np.array([65., 115.])/(Fs/2), btype='bandpass')
 b2,a2 = sp.butter(3, (f0/2)/(Fs/2), btype='lowpass')
 tempf = sp.filtfilt(b,a,tempt)
 
@@ -427,7 +427,7 @@ if(repro):
             plt.legend(loc="upper right")
 
             if Make_npy_FIG1:
-                np.save("fig1_info_filter_5to350Hz.npy", [stackdati, -stackdato, tvec[:680]-0.02, tempt[120:], tt[120:]+0.5e-3, tvec, indatf, outdatf, mon])
+                np.save("fig1_info_filter_65to115Hz.npy", [stackdati, -stackdato, tvec[:680]-0.02, tempt[120:], tt[120:]+0.5e-3, tvec, indatf, outdatf, mon])
 
             #newi_psd, newi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
             #newo_psd, newo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))
