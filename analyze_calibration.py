@@ -22,7 +22,7 @@ mass = 1.03e-12 # kg
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
 repro = True # Set true to reprocess data, false to read from file
-Fernando_path = True
+Fernando_path = False
 
 Make_npy_FIG1 = False # use it as false for calibration
 

@@ -14,8 +14,8 @@ mass = 1.03e-12 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
-repro = False
-remake_coinc_cut = False
+repro = True
+remake_coinc_cut = True
 Fernando_path = False
 
 ## don't use the 20200621 folder since the noise is 50% higher
@@ -97,8 +97,10 @@ gam = get_gammas(path2)
 temp = make_template(Fs, f0, gam, 1, mass)
 
 #tempt = np.hstack((np.zeros(500), temp[0]))
+b2,a2 = sp.butter(3, (f0/2)/(Fs/2), btype='lowpass')
+b,a = sp.butter(3, np.array([65., 115.])/(Fs/2), btype='bandpass')
 tempt = temp[0]
-
+tempf = sp.filtfilt(b,a,tempt)
 
 normf = np.sum( tempf**2 )
 tempt #/= np.sum( tempt**2 )
@@ -155,6 +157,7 @@ print(vtom_in, vtom_out, f0, gam )
 flist = []
 ecilist = []
 ecolist = []
+siglist = []
 for calfile, d in zip(cal_list, data_list):
     f = sorted(glob.glob(d + "/*.h5"), key=get_num)
     for ff in f:
@@ -163,12 +166,13 @@ for calfile, d in zip(cal_list, data_list):
         eng_cal_pars = ccal['eng_cal_pars']        
         ecilist.append(eng_cal_pars[0])
         ecolist.append(eng_cal_pars[1])
+        siglist.append(ccal['sigval'])
         
 if(repro):
     ## now load each file and process the data for kicks
     joint_peaks = []
     file_offset = 0
-    for fi, f in enumerate(flist[::1]):
+    for fi, f in enumerate(flist[::100]):
         
         print(f)
         cd = getdata(f)
@@ -280,7 +284,7 @@ if(repro):
                     plt.title( "min chi2, %.2e, best idx, %d"%(chisq_out, 0) )
                     plt.show()                
                     
-                joint_peaks.append( [file_offset+tvec[ip], ipp*SI_to_GeV, opp*SI_to_GeV, chisq_in, chisq_out, timestamp+tvec[ip], accmax, accstd, accmaxf, accstdf, accmaxf2, accstdf2])
+                joint_peaks.append( [file_offset+tvec[ip], ipp*SI_to_GeV, opp*SI_to_GeV, chisq_in, chisq_out, timestamp+tvec[ip], accmax, accstd, accmaxf, accstdf, accmaxf2, accstdf2, siglist[fi]])
 
         file_offset += npts/Fs
         
@@ -306,7 +310,8 @@ if(repro):
 else:
     joint_peaks = np.load("joint_peaks.npy")
 
-sig = 0.2818451718216727 ## from 20200616cal
+#sig = 0.2818451718216727 ## from 20200616cal
+sig = joint_peaks[:,12]
 gpts = np.abs( joint_peaks[:,1] - joint_peaks[:,2] ) < 2*sig
 
 xe = np.linspace(0,8,100)
