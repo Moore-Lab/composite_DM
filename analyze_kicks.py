@@ -14,9 +14,9 @@ mass = 1.03e-12 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
-repro = True
-remake_coinc_cut = True
-Fernando_path = True
+repro = False
+remake_coinc_cut = False
+Fernando_path = False
 
 ## don't use the 20200621 folder since the noise is 50% higher
 if(Fernando_path):
