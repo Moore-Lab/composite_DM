@@ -172,7 +172,7 @@ if(repro):
     ## now load each file and process the data for kicks
     joint_peaks = []
     file_offset = 0
-    for fi, f in enumerate(flist[::100]):
+    for fi, f in enumerate(flist[::1]):
         
         print(f)
         cd = getdata(f)
