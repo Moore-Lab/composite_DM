@@ -14,6 +14,8 @@ B = np.load("fig1_info_filter_5to350Hz.npy", encoding='latin1', allow_pickle=Tru
 
 energy = (1.602e-19) * 3.2 * 200. * 1e-4 * SI_to_GeV / distance
 
+print (energy)
+
 # plt.figure()
 # plt.plot(A[2], A[0])
 # plt.plot(A[2], A[1])

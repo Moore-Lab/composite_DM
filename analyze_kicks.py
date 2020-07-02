@@ -98,9 +98,7 @@ temp = make_template(Fs, f0, gam, 1, mass)
 
 #tempt = np.hstack((np.zeros(500), temp[0]))
 tempt = temp[0]
-b,a = sp.butter(3, np.array([65., 115.])/(Fs/2), btype='bandpass')
-b2,a2 = sp.butter(3, (f0/2)/(Fs/2), btype='lowpass')
-tempf = sp.filtfilt(b,a,tempt)
+
 
 normf = np.sum( tempf**2 )
 tempt #/= np.sum( tempt**2 )
@@ -111,7 +109,7 @@ bstop2,astop2 = sp.butter(3, 400./(Fs/2), btype='lowpass')
 
 #tt = np.arange(-flen/(2*Fs), flen/(2*Fs), 1./Fs)
 tt = np.arange(-1/gam, 1.5/gam, 1./Fs)
-tempt = make_template(Fs, f0, gam, 11.6/SI_to_GeV, mass)[0]
+tempt = make_template(Fs, f0, gam, 9.6/SI_to_GeV, mass)[0]
 #chi2pts = np.logical_and( tt >= 0, tt<1.5/gam) 
 #chi2tempf = tempf[chi2pts]*normf/SI_to_GeV
 
@@ -551,8 +549,7 @@ chi2_cut = np.logical_and( joint_peaks[:,3] < np.polyval(pin, joint_peaks[:,1]),
 
 
 ## apply energy calibration (accounts for search bias) -- fix hardcoded parameters
-ebpc = [0.40976814, 0.23837576, 1.15578885] ## energy calibration from cal pulses, use fernando's pars
-#ebpc = [ 0.52721076, -0.04189387, 1.62850192] 
+ebpc = [0.33882171, 0.19736197, 0.95576589] ##[ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
 #ebpc = np.load("combined_recon_cal.npy") ## from find_combined_cal_params.py
 def cfit(x,A,mu,sig):
     return x + A*(1+erf((mu-x)/sig))

@@ -14,6 +14,8 @@ from scipy.interpolate import UnivariateSpline
 
 # the ecbp is fixed down below, this is a clear choice that accomodates well the data and dont affect the limit plot by a visible amount
 
+distance = 3.99e-3 # in m
+disterr = 0.05*1e-3 # in m
 Fs = 1e4
 mass = 1.03e-12 # kg
 #flen = 524288  # file length, samples
@@ -27,17 +29,17 @@ Make_npy_FIG1 = False # use it as false for calibration
 calibration_date = "20200619"
 
 if Fernando_path:
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.1V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.4V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.8V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/1.6V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/6.4V"]
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
     if Make_npy_FIG1:
         data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",]
 
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200619/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
@@ -165,7 +167,7 @@ bstop2,astop2 = sp.butter(3, 400./(Fs/2), btype='lowpass')
 
 #tt = np.arange(-flen/(2*Fs), flen/(2*Fs), 1./Fs)
 tt = np.arange(-1.5/gam, 1.5/gam, 1./Fs)
-tempt = make_template(Fs, f0, gam, 11.6/SI_to_GeV, mass)[0]
+tempt = make_template(Fs, f0, gam, 9.6/SI_to_GeV, mass)[0]
 tempt = sp.filtfilt(b,a,tempt)
 
 #chi2pts = np.logical_and( tt >= 0, tt<1.5/gam) 
@@ -421,7 +423,7 @@ if(repro):
             plt.plot( tvec[:680]-0.02, stackdati, label='in loop'  )
             plt.plot( tvec[:680]-0.02, -stackdato, label='out of loop' )
             #plt.plot( tt+0.5e-3, tempt, label="Fernando's template" )
-            plt.plot( tt[120:]+0.5e-3, tempt[120:], 'k:', label="Template" )
+            plt.plot( tt[120:]+0.5e-3, tempt[120:]/2, 'k:', label="Template" )
             plt.legend(loc="upper right")
 
             if Make_npy_FIG1:
@@ -468,10 +470,10 @@ def ffn(x,A,mu,sig,C):
 cols = get_color_map(len(vlist))
 
 ## list of kicks in GeV/c (what we expect)
-gev_list = 200*vlist*1e-4/(0.0033)*(1.6e-19) * SI_to_GeV
+gev_list = 200*vlist*1e-4/(distance)*(1.6e-19) * SI_to_GeV
 
-gev_errl = 200*vlist*1e-4/(0.0037)*(1.6e-19) * SI_to_GeV
-gev_errh = 200*vlist*1e-4/(0.0029)*(1.6e-19) * SI_to_GeV
+gev_errl = 200*vlist*1e-4/(distance + disterr)*(1.6e-19) * SI_to_GeV
+gev_errh = 200*vlist*1e-4/(distance - disterr)*(1.6e-19) * SI_to_GeV
 
 print("cal amplitudes")
 print(gev_list)
@@ -568,11 +570,11 @@ bcaly, bcale = mean_list[:,0]/corr_fac_in, mean_list[:,2]/corr_fac_in
 ## fit calibraion to get search bias at low energy
 spars = [0.299019, 0.56726896, 0.93185983]
 ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars,  maxfev=10000)
-ecbp = [ 0.52721076, -0.04189387, 1.62850192] # this is what david finds
+#ecbp = [ 0.52721076, -0.04189387, 1.62850192] # this is what david finds
 plt.plot( xx, cfit(xx, *ecbp), 'k')
-fern = [0.40976814, 0.23837576, 1.15578885] # this is what fernando finds and it is hard coded in the analysis code too. Both david and fernando number result in similar results.
+fern = [0.33882171, 0.19736197, 0.95576589] # this is what fernando finds and it is hard coded in the analysis code too. Both david and fernando number result in similar results.
 ecbp = fern
-plt.plot( xx, cfit(xx, *fern), 'k:')
+plt.plot( xx, cfit(xx, *ecbp), 'k:')
 
 print("Energy cal params: ", ecbp)
 
@@ -681,6 +683,6 @@ chi2eff = np.sum(pass_cut)/len(pass_cut)
 
 ## now save all parameters to a calibration file
 eng_cal_pars = [corr_fac_in, corr_fac_out]
-np.savez("calibration_file_"+calibration_date+".npz", reconeff_params=bpi, chi2eff=chi2eff, bias_cal_params=ecbp, eng_cal_pars=eng_cal_pars, amp_match_eff=cut_eff, chi2cut_pars_in=pin, chi2cut_pars_out=pout, rx=xo,ry=yo,re=xeo, bias_cal_data=bcaly, bias_cal_err=bcale)
+np.savez("calibration_file_"+calibration_date+".npz", reconeff_params=bpi, chi2eff=chi2eff, bias_cal_params=ecbp, eng_cal_pars=eng_cal_pars, amp_match_eff=cut_eff, chi2cut_pars_in=pin, chi2cut_pars_out=pout, rx=xo,ry=yo,re=xeo, bias_cal_data=bcaly, bias_cal_err=bcale, sigval = sigval)
 
 plt.show()
