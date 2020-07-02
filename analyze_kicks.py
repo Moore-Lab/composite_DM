@@ -551,7 +551,8 @@ chi2_cut = np.logical_and( joint_peaks[:,3] < np.polyval(pin, joint_peaks[:,1]),
 
 
 ## apply energy calibration (accounts for search bias) -- fix hardcoded parameters
-ebpc = [0.40976814, 0.23837576, 1.15578885] ##[ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
+ebpc = [0.40976814, 0.23837576, 1.15578885] ## energy calibration from cal pulses, use fernando's pars
+#ebpc = [ 0.52721076, -0.04189387, 1.62850192] 
 #ebpc = np.load("combined_recon_cal.npy") ## from find_combined_cal_params.py
 def cfit(x,A,mu,sig):
     return x + A*(1+erf((mu-x)/sig))

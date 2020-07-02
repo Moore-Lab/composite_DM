@@ -20,7 +20,7 @@ tthr = 0.050 ## time threshold in s for which to look for coincidences with cali
 repro = True # Set true to reprocess data, false to read from file
 Fernando_path = False
 
-calibration_date = "20200615"
+calibration_date = "20200619"
 
 if Fernando_path:
     data_list = ["/Volumes/My Passport for Mac/DM measurements/20200617/kick/0.1ms/0.1V",
