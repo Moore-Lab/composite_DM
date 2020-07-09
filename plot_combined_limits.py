@@ -4,7 +4,8 @@ from scipy.interpolate import UnivariateSpline as us
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 
-m_phi_list = [1e-1, 1e-2, 0]
+m_phi_list = [1, 1e-1, 1e-2, 0]
+clist = ['k', 'b', 'r', 'g']
 
 mchi = 1e-6 ## componenent mass, GeV
 
@@ -15,7 +16,7 @@ Eth = 500e-9
 hbarc = 2e-14 ## GeV cm
 
 def get_color_map( n ):
-    jet = plt.get_cmap('jet') 
+    jet = plt.get_cmap('jet') ##Blues_r') 
     cNorm  = colors.Normalize(vmin=0, vmax=n-1)
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
     outmap = []
@@ -23,7 +24,7 @@ def get_color_map( n ):
         outmap.append( scalarMap.to_rgba(i) )
     return outmap
 
-cs = get_color_map(len(m_phi_list))
+cs = get_color_map(len(m_phi_list)+2)
 
 fig=plt.figure()
 
@@ -31,6 +32,7 @@ nugg_fig = plt.figure()
 
 ff = np.load("fifth_force_limits.npz")
 
+lw = 2
 for c,m in zip(cs, m_phi_list):
 
     cdat = np.load("limit_plots_long/limit_data_%.2e.npz"%m)
@@ -39,30 +41,36 @@ for c,m in zip(cs, m_phi_list):
     
     if( m == 0):
         ## bad points from spectra prodcued by plot_results.py
-        skip_pts = [] #[90.7, 456, 528, 582, 612, 709, 822, 873, 1986, 1e6, 2154490]
+        skip_pts = [] #[43.5, 90.7, 582, 1311, 1987]
         for sp in skip_pts:
             gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
-        xx = np.logspace(np.log10(50),9,100)
-        sfac = 0.025
+        xx = np.logspace(np.log10(40),9,100)
+        sfac = 0.1
     elif( m == 1e-2):
         ## bad points from spectra prodcued by plot_results.py
-        skip_pts = [] #[456, 528, 582, 612,1278]
+        skip_pts = [] #[1278,]
         if(len(skip_pts)>0):
             for sp in skip_pts:
                 gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
-        xx = np.logspace(np.log10(50),9,100)
-        sfac = 0.025   
+        gpts = np.logical_and( gpts, np.logical_or( cdat['mx_list']<2.6e3, cdat['mx_list']>12e3) )
+        xx = np.logspace(np.log10(40),9,100)
+        sfac = 0.1   
     elif( m == 1e-1):
         ## bad points from spectra prodcued by plot_results.py
-        skip_pts = [] #[113,]
+        skip_pts = [] #[80,] #[113,]
+        if(len(skip_pts)>0):
+            for sp in skip_pts:
+                gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
+        xx = np.logspace(np.log10(110),9,100)
+        sfac = 0.075  
+    else:
+        gpts = np.logical_and( gpts, np.logical_and( cdat['mx_list']>1300, cdat['mx_list']<1e4) )
+        skip_pts = [] #[5555,]
         if(len(skip_pts)>0):
             for sp in skip_pts:
                 gpts = np.logical_and( gpts, np.logical_not((np.abs(cdat['mx_list']-sp)/sp)<0.01) )
         xx = np.logspace(np.log10(50),9,100)
-        sfac = 0.025   
-    else:
-        xx = np.logspace(np.log10(50),9,100)
-        sfac = 0.5
+        sfac = 0.4
         
     spl = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=sfac )
     #p = np.polyfit( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), 3)
@@ -72,23 +80,40 @@ for c,m in zip(cs, m_phi_list):
     if(m == 0):
         ## finely sampled, so only spline smooth above the step
         d1 = 10**spl(np.log10(xx))
-        spl3 = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=1, k=3 )
+        gpts = np.logical_and( gpts, np.logical_or( cdat['mx_list']<6e3, cdat['mx_list']>12e3) )
+        spl3 = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=1, k=2 )
         d3 = 10**spl3(np.log10(xx))
-        #dd = np.logical_and( xx>560, xx<1e4 )
-        sidx = np.argwhere( xx > 2e3 )[0][0]
-        minidx = np.argmin( np.abs( d3[sidx:]-d1[sidx:]))
-        d3[:(sidx+minidx)] = d1[:(sidx+minidx)]
-        plt.loglog(xx, d3, label="$m_\phi$ = %.0e eV"%m, color=c)
-        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, mfc='none')
+        jidx = np.argmin( np.abs( xx - 3000) )
+        d1[jidx:] = d3[jidx:]
+        skidx = np.argmin( np.abs(xx - 2500) )
+        d1[skidx] = np.nan
+        ppts = np.logical_not(np.isnan(d1))
+        #plt.loglog(xx[ppts], d1[ppts], label="$m_\phi$ = %g eV"%m, color=c, lw=lw)
+    elif( m == 1e-2):
+        ## finely sampled, so only spline smooth above the step
+        d1 = 10**spl(np.log10(xx))
+        gpts = np.logical_and( gpts, np.logical_or( cdat['mx_list']<0, cdat['mx_list']>2.2e3) )
+        spl3 = us( np.log10(cdat['mx_list'][gpts]), np.log10(cdat['limits'][gpts]), s=0.1, k=3 )
+        d3 = 10**spl3(np.log10(xx))
+        jidx = np.argmin( np.abs( xx - 2000) )
+        d1[jidx:] = d3[jidx:]
+        skidx = np.argmin( np.abs(xx - 1770) )
+        d1[skidx] = np.nan
+        skidx = np.argmin( np.abs(xx - 2096) )
+        d1[skidx] = np.nan
+        ppts = np.logical_not(np.isnan(d1))
+        #plt.loglog(xx[ppts], d1[ppts], label="$m_\phi$ = %g eV"%m, color=c, lw=lw)
+        #plt.loglog(xx[ppts], d1[ppts], '.', color=c)       
     else:
-        plt.loglog(xx, 10**spl(np.log10(xx)), label="$m_\phi$ = %.0e eV"%m, color=c)
-        
+        #plt.loglog(xx, 10**spl(np.log10(xx)), label="$m_\phi$ = %g eV"%m, color=c, lw=lw)
+        print("")
         #plt.loglog(xx, 10**np.polyval(p,np.log10(xx)), label="$m_\phi$ = %.0e eV"%m)
     
-        plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, mfc='none')
+        #plt.loglog(cdat['mx_list'], cdat['limits'], 'o', color=c, mfc='none')
 
         #plt.loglog(cdat['mx_list'][gpts], cdat['limits'][gpts], 'o', color=c, label="$m_\phi$ = %.0e eV"%m)
-        
+    plt.loglog(cdat['mx_list'], cdat['limits'], 'o', color=c, mfc='none')
+    
     plt.figure(nugg_fig.number)
     ff_limit = np.interp(m, ff['x'][::-1], ff['y'][::-1] )
     plt.loglog(cdat['mx_list'][gpts], 1e3*ff_limit*cdat['mx_list'][gpts]/(4*np.pi*cdat['limits'][gpts]), '-', color=c)
@@ -97,6 +122,9 @@ for c,m in zip(cs, m_phi_list):
     
     plt.xlabel("DM Mass")
     plt.ylabel("Constituent mass [MeV]")
+
+    if(True and (m == 1e-1 or m==1)):
+        np.savez("limits_mphi_%.0e.npz"%m, x=xx, y=10**spl(np.log10(xx)))
     
     # if( True and m == 5e-2 ):
     #    np.savez("proj_mphi_%.0e.npz"%m, x=xx, y=10**spl(np.log10(xx)))
@@ -125,17 +153,17 @@ for c,m in zip(cs, m_phi_list):
         plt.loglog(xx, signr)
         
 plt.figure(fig.number)
-plt.legend(loc="lower right", fontsize=8)
-plt.xlabel("Dark matter mass, $m_X$ [GeV]")
-plt.ylabel(r"Upper limit on neutron coupling, $\alpha_n$")
+plt.legend(loc="lower right", fontsize=9)
+plt.xlabel("DM mass, $M_X$ [GeV]")
+plt.ylabel(r"Limit on neutron coupling, $\alpha_n$")
 #plt.title("Limits from 1 ng sphere, exposure = 20.6 min")
-plt.tight_layout(pad=0)
 plt.xlim([1e1, 1e8])
 plt.ylim([5e-10, 1e-5])
-#fig.set_size_inches(5,4)
-plt.tight_layout()
+#fig.set_size_inches(5,3.1)
+plt.tight_layout(pad=0)
+#plt.tight_layout()
 
-plt.savefig("combined_limit_plot.pdf") #, transparent=True)
+#plt.savefig("combined_limit_plot.pdf") #, transparent=True)
 
 ## now nugget model
 

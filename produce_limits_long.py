@@ -8,9 +8,11 @@ import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.special import erf
-from scipy.optimize import minimize
+from scipy.optimize import minimize, curve_fit
+import sys
+from scipy.interpolate import UnivariateSpline as us
 
-m_phi = 0
+m_phi = float(sys.argv[1]) #0
 
 o = open("drdq_interp_grace_%.2e.pkl"%m_phi, 'rb')
 fdict = pickle.load(o)
@@ -18,30 +20,51 @@ o.close()
 
 ## nuiscance paramters for systematics:
 gscale_mu, gscale_sig = 1.0, 1.0  ## weak constraint for background
-escale_mu, escale_sig = 1.0, 0.1/3.3 ## syst error on electrode spacing
+escale_mu, escale_sig = 1.0, 0.05/3.999 ## syst error on electrode spacing
+nneut_mu, nneut_sig = 1.0, 0.33 ## syst error on number of neutrons
 
 LLoffset = 10021889 ## loglikelihood offset to make numerical solution well-behaved
 
-## make angular distribution for scattering in the x direction
-if(False):
-    nmc = 100000000
-    theta_vec = np.random.rand(nmc)*np.pi
-    phi_vec = np.random.rand(nmc)*2*np.pi
-    hang, bang = np.histogram(theta_vec*phi_vec, range=(0,1), bins=100)
-    bcang = bang[:-1] + np.diff(bang)/2
-    hang = hang/np.sum(hang)
-    plt.figure()
-    plt.plot(bcang, hang)
-    plt.show()
-    np.savez("ang_distrib.npz", hang = hang, bcang = bcang )
-else:
-    ang_dat = np.load("ang_distrib.npz")
-    bcang = ang_dat['bcang']
-    hang = ang_dat['hang']
-    #plt.figure()
-    #plt.plot(bcang, hang)
-    #plt.show()
 
+def get_color_map( n, mname = 'jet' ):
+    jet = plt.get_cmap(mname) 
+    cNorm  = colors.Normalize(vmin=0, vmax=n-1)
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+    outmap = []
+    for i in range(n):
+        outmap.append( scalarMap.to_rgba(i) )
+    return outmap
+
+## make paper spectrum plot
+make_spec_plot = False
+spec_plot_vals = [[1, 2.1e-8],
+                  [0.1, 1.5e-8],
+                  [0.01, 3.3e-9],
+                  [0, 2.1e-9]]
+spec_plot_mass = 5e3
+lim_plot_cols = get_color_map(len(spec_plot_vals)+2, mname="Blues_r")
+
+# ### code below now done in plot_results.py
+# ## make angular distribution for scattering in the x direction
+# if(False):
+#     nmc = 100000000
+#     theta_vec = np.random.rand(nmc)*np.pi
+#     phi_vec = np.random.rand(nmc)*2*np.pi
+#     hang, bang = np.histogram(theta_vec*phi_vec, range=(0,1), bins=100)
+#     bcang = bang[:-1] + np.diff(bang)/2
+#     hang = hang/np.sum(hang)
+#     plt.figure()
+#     plt.plot(bcang, hang)
+#     plt.show()
+#     np.savez("ang_distrib.npz", hang = hang, bcang = bcang )
+# else:
+#     ang_dat = np.load("ang_distrib.npz")
+#     bcang = ang_dat['bcang']
+#     hang = ang_dat['hang']
+#     #plt.figure()
+#     #plt.plot(bcang, hang)
+#     #plt.show()
+# ########################
     
 Ns_to_GeV_over_c = 1.871e18
 use_Gev = True
@@ -50,16 +73,8 @@ fold = True # uses single gaussian and only shows abs value of the kick
 
 #https://colorfuldots.com/color/#e9531e
 
-pdf = PdfPages('limit_plots_long/limit_plots_m_phi_%.2e.pdf'%m_phi)
-
-def get_color_map( n ):
-    jet = plt.get_cmap('jet') 
-    cNorm  = colors.Normalize(vmin=0, vmax=n-1)
-    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
-    outmap = []
-    for i in range(n):
-        outmap.append( scalarMap.to_rgba(i) )
-    return outmap
+if(not make_spec_plot):
+    pdf = PdfPages('limit_plots_long/limit_plots_m_phi_%.2e.pdf'%m_phi)
 
 
 dat = np.load("dm_data.npz") #, dp=bc, cts = hh2/s_to_day, err=np.sqrt(hh2)/s_to_day)
@@ -72,8 +87,8 @@ cut_eff = 0.972 * 0.929 * 0.95  #efficiency of acceleromter cut, chi2 cut, amp c
 Exposuretime *= cut_eff
 
 ## energy threshold
-analysis_thresh = 0.1 #min calibration point
-sidx=np.argwhere( bc > analysis_thresh).flatten()[0]
+analysis_thresh = 0.15 #min calibration point
+sidx=np.argwhere( bc >= analysis_thresh).flatten()[0]
 print(sidx)
 
 space = np.linspace(0, 2, 1500)
@@ -114,53 +129,72 @@ bp, bcov = opt.curve_fit( gauss_fit, bc[fpts], h[fpts]/cts_per_day, sigma=ysig[f
 #bp = spars
 print(bp)
 
-xx = np.linspace(0,2,1000)
+xx = np.linspace(0.05,2,1000)
 binsize = bc[1]-bc[0]
 
 def rescaled_model( xv, model, bg, data, qvals ):
     escale = xv[0]
     gscale = xv[1]
-    ## rescale DM model by escale
-    new_model = np.interp( qvals, escale*qvals, model/escale, left=0, right=0 )
+    nneut = xv[2]
+    ## rescale DM model by escale and error on number of neutrons
+    new_model = np.interp( qvals, escale*qvals, model/escale, left=0, right=0 ) * nneut**2
     new_bg = gscale * bg
     tot_mod = new_model + new_bg
 
     ## remove any bad values from the model
     tot_mod[ tot_mod < 1e-30 ] = 1e-30 ## minimum value so the log doesn't overflow
-    
-    gauss_term = (escale - escale_mu)**2/(2*escale_sig**2) + (gscale - gscale_mu)**2/(2*gscale_sig**2)
+
+    ## for nneut term, ensure the fit is not driven to impossible values (i.e., those that would not be
+    ## consistent with res frequency) are truncated at central 1 sig (30%)
+    ## based on Slack conversation between Dave/Fernando, 2020/07/08
+    if( np.abs(nneut - nneut_mu) > 0.5*nneut_sig ):
+        ## smoother way of providing "hard edge"
+        nneut_term = (nneut - nneut_mu)**2/(2*nneut_sig**2) + ((nneut - nneut_mu)**2 - 0.5**2)/(1e-2*nneut_sig)**2
+    else:
+        nneut_term = (nneut - nneut_mu)**2/(2*nneut_sig**2)
+
+    gauss_term = (escale - escale_mu)**2/(2*escale_sig**2) + (gscale - gscale_mu)**2/(2*gscale_sig**2) + nneut_term
     return -np.sum( data[sidx:] * np.log(tot_mod[sidx:]) - tot_mod[sidx:] ) + gauss_term + LLoffset
 
     
 def logL( model, data, bg, qvals):
     
     ## profile over best gaussian amplitude, escale
-    res = minimize( rescaled_model, (1.0, 1.0), args=(model, bg, data, qvals), tol=0.1 )
+    res = minimize( rescaled_model, (1.0, 1.0, 1.0), args=(model, bg, data, qvals), tol=0.1 )
 
-    if( not res.success ):
+    if( not res.success and not res.status==2):
         #print( "optimization failed" )
-        return np.nan, 1.0, 1.0, []
+        return np.nan, 1.0, 1.0, 1.0, []
                     
     xvals = res.x
 
     best_like = res.fun
     best_ea = xvals[0]
     best_ga = xvals[1]
+    best_nn = xvals[2]
     new_model = np.interp( qvals, best_ea*qvals, model/best_ea, left=0, right=0 )
     new_bg = best_ga * bg
     best_model = new_model + new_bg
     
-    return best_like, best_ea, best_ga, best_model
-    
+    return best_like, best_ea, best_ga, best_nn, best_model
+
+
+
 for mi_idx, mx in enumerate(mx_list): #mx = 1000
     print("Working on mass: ", mx)
 
-    #if( mx < 10000 ): continue
+    #if( mx < 612 ): continue
     
-    plt.figure()
-    plt.errorbar(bc, h/cts_per_day, yerr = sigma/cts_per_day, fmt = "k.")#, color = "#7c1ee9")
-    plt.plot(xx, gauss_fit(xx, *bp), 'k')
-
+    fig=plt.figure()
+    if(make_spec_plot):
+        ## bin size correction
+        
+        plt.errorbar(bc, h/cts_per_day * 1/binsize, yerr = sigma/cts_per_day * 1/binsize, fmt = "k.")#, color = "#7c1ee9")
+        plt.plot(xx, gauss_fit(xx, *bp) * 1/binsize, 'k:')
+    else:
+        plt.errorbar(bc, h/cts_per_day, yerr = sigma/cts_per_day, fmt = "k.")#, color = "#7c1ee9")
+        plt.plot(xx, gauss_fit(xx, *bp), 'k')
+        
     plt.yscale('log')
     plt.xlim([0,5])
     plt.ylim((0.1, 3e5))
@@ -173,6 +207,119 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     bedges = bc-binsize/2
     bedges = np.hstack((bedges, bc[-1]+binsize/2))
 
+    if(make_spec_plot):
+        for csidx, spec_vals in enumerate(spec_plot_vals):
+            mx = spec_plot_mass
+            alpha = spec_vals[1]
+            mp = spec_vals[0]
+            if(not mp==0.1): continue
+            o = open("drdq_interp_grace_%.2e.pkl"%mp, 'rb')
+            fdict = pickle.load(o)
+            o.close()
+
+            mx_list = sorted(fdict.keys())
+            
+            closest_mx = mx_list[np.argmin( np.abs(np.array(mx_list) - mx) )]
+            dm_rate = fdict[closest_mx](np.log10(qq), np.log10(alpha))
+            dm_rate[np.isnan(dm_rate)] = 0
+
+            dm_vec = np.zeros_like(bc)
+            bg_vec = np.zeros_like(bc)
+            for i in range(len(bc)):
+                gidx = np.logical_and(qq>=bedges[i], qq<bedges[i+1])
+                dm_vec[i] = np.trapz( dm_rate[gidx], qq[gidx] ) * Exposuretime/3600. 
+                bg_vec[i] = gauss_fit(bc[i], *bp)*cts_per_day
+            clogL, best_ea, best_ga, best_nn, best_model = logL( dm_vec, h, bg_vec, bc )
+            bidx = bc > 0.05
+            plt.plot( bc[bidx], best_model[bidx]/cts_per_day * 1/binsize, color = lim_plot_cols[csidx], label=r"$\alpha_n$ = %.2e"%alpha)
+
+        plt.xlim([0,5])
+        plt.ylim((1, 2e6))
+        plt.xlabel("Reconstructed impulse amplitude [GeV]")
+        plt.ylabel("Counts [GeV$^{-1}$ day$^{-1}$]")
+
+        fig.set_size_inches(5,3)
+        plt.tight_layout(pad=0)
+
+        ax = plt.axes([0.5, 0.5, 0.45, 0.45])
+        
+        ## now the recon efficiency in the inset
+        qvals = np.linspace(0.05, 4, 1000)
+
+        f1 = np.load("calibration_file_20200615.npz")
+        f2 = np.load("calibration_file_20200619.npz")
+        f3 = np.load("calibration_file_20200617.npz")
+
+        rp1 = f1['reconeff_params']
+        rp2 = f2['reconeff_params']
+        rp3 = f3['reconeff_params']
+
+        rx1, ry1, re1 = f1['rx'], f1['ry'], f1['re']
+        rx2, ry2, re2 = f2['rx'], f2['ry'], f2['re']
+        rx3, ry3, re3 = f3['rx'], f3['ry'], f3['re']
+
+        def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
+            return A1*(1.+erf((x-mu1)/(np.sqrt(2.)*sig1)))/2. + A2*(1.+erf((np.log(x)-mu2)/(np.sqrt(2.)*sig2)))/2.
+
+        def ffnerf2(x, A1, mu1, sig1, A2):
+            return A1*(1.+erf((x-mu1)/(np.sqrt(2.)*sig1)))/2. + A2
+
+        eff_corr_vec1 = ffnerf2( qvals, *rp1 )
+        eff_corr_vec2 = ffnerf2( qvals, *rp2 )
+        eff_corr_vec3 = ffnerf2( qvals, *rp3 )
+
+        eff_corr_vec1[eff_corr_vec1 > 1] = 1
+        eff_corr_vec2[eff_corr_vec2 > 1] = 1
+        eff_corr_vec3[eff_corr_vec3 > 1] = 1
+
+        cdat = (ry1 + ry2 + ry3)/3.
+        cerr = np.sqrt( re1**2 + re2**2 + re3**2 )/3.
+
+        ## interpolate the scatter between runs as the error
+        stack = np.vstack( (ry1, ry2, ry3) )
+        print(np.shape(stack))
+        eff_err = np.std( stack, axis=0 )/np.sqrt(3)
+        #plt.figure()
+        #plt.plot(rx2, eff_err)
+        #eei = np.interp(qvals, rx2, eff_err)
+        uss = us( rx2, eff_err, s = 1e-4, k=1)
+        eei = uss( qvals )
+        #plt.plot( qvals, eei )
+        #plt.show()
+        
+        #print(rp1)
+        #bpi, bci = curve_fit(ffnerf, rx1, cdat, p0 = [1.46, 0.35, 0.46, -0.46, 4.7, -0.05])
+        bpi, bci = curve_fit(ffnerf2, rx1, cdat, p0 = [1.46, 0.35, 0.46, 0.3], sigma = cerr)
+        
+        #plt.errorbar( rx1, ry1, yerr=re1, fmt='.')
+        #plt.errorbar( rx2, ry2, yerr=re2, fmt='.')
+        #plt.errorbar( rx3, ry3, yerr=re3, fmt='.')
+        ieff = 0.929 * 0.95
+        ieff_err = ieff * 0.038/np.sqrt(3) ## relative error on cut efficiencies from analyze_calibration
+        yvals = ffnerf2(qvals, *bpi)*ieff
+        yvals[qvals < analysis_thresh] = 0
+        #plt.errorbar( rx2, cdat*ieff, yerr=cerr*ieff, fmt='k.')
+        yvals_u = yvals + np.sqrt(eei**2 + ieff_err**2)
+        yvals_u[qvals < analysis_thresh] = 0
+        yvals_l = yvals - np.sqrt(eei**2 + ieff_err**2)
+        yvals_l[qvals < analysis_thresh] = 0
+        plt.fill_between( qvals, yvals_l, yvals_u, color='k', alpha = 0.2, edgecolor='none')
+        plt.plot(qvals, yvals, 'k', label='com')
+        
+        
+        plt.xlim([0, 2.5])
+        plt.ylim([0, 1])
+
+        plt.grid(True)
+        
+        plt.xlabel("Recon. impulse amplitude [GeV]")        
+        plt.ylabel("Signal efficiency")
+
+        plt.savefig("dm_spectrum.pdf")
+        
+        plt.show()
+        sys.exit(0)
+            
     cols = get_color_map(len(alpha_vec))
         
     logL_vec = np.zeros_like(alpha_vec)
@@ -206,9 +353,11 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             plt.semilogy( bc, bg_vec, 'r.')
             plt.show()
             
-        logL_vec[j], best_ea, best_ga, best_model = logL( dm_vec, h, bg_vec, bc )
+        logL_vec[j], best_ea, best_ga, best_nn, best_model = logL( dm_vec, h, bg_vec, bc )
 
+        #print("best nn: ", best_nn)
         print("logL, alpha: %.5f\t%.2e"%(logL_vec[j], alpha))
+
         if( np.isnan(logL_vec[j]) ):
             continue
         
@@ -231,8 +380,9 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     plt.tight_layout(pad=0)
     plt.title(r"DM Mass = %.1e GeV, $m_\phi = %.1e$"%(mx, m_phi))
     plt.tight_layout(pad=0)
-    plt.savefig("limit_plots_long/data_vs_dm_mx_%.1e_m_phi_%.2e.pdf"%(mx,m_phi))
-    pdf.savefig()
+    if( not make_spec_plot):
+        plt.savefig("limit_plots_long/data_vs_dm_mx_%.1e_m_phi_%.2e.pdf"%(mx,m_phi))
+        pdf.savefig()
 
     plt.figure()
     plt.errorbar(bc[sidx:], h[sidx:]/cts_per_day - bg_vec[sidx:]/cts_per_day, yerr = sigma[sidx:]/cts_per_day, fmt = "k.", label="no DM")#, color = "#7c1ee9")
@@ -242,8 +392,9 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     plt.xlim([0,3])
     plt.title(r"DM Mass = %.1e GeV, $m_\phi = %.1e$"%(mx, m_phi))
     plt.tight_layout(pad=0)
-    plt.savefig("limit_plots_long/data_vs_dm_mx_resid_%.1e_m_phi_%.2e.pdf"%(mx,m_phi))
-    pdf.savefig()
+    if( not make_spec_plot):
+        plt.savefig("limit_plots_long/data_vs_dm_mx_resid_%.1e_m_phi_%.2e.pdf"%(mx,m_phi))
+        pdf.savefig()
     
     #plt.show()
     
@@ -277,9 +428,17 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     logL_vec = logL_vec[pts_for_lim]
     alpha_vec = alpha_vec[pts_for_lim]
 
+    
     logL_vec = 2*logL_vec
-    ## throw out non-increasing values
+    ## throw out any spikes or non-increasing values
     for i in range(1,len(logL_vec)):
+
+        if( i < len(logL_vec)-1 ):
+            cmean = (logL_vec[i-1] + logL_vec[i+1])/2
+            cdiff = np.abs(logL_vec[i-1] - logL_vec[i+1])
+            if( np.abs(logL_vec[i]-cmean) > 5*cdiff ):
+                logL_vec[i] = cmean
+        
         if logL_vec[i] <= logL_vec[i-1]:
             logL_vec[i] = logL_vec[i-1] ## fill last largest val
     
@@ -319,8 +478,9 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     plt.plot( [limval, limval], [0,5], 'k:')
     plt.sca(ax)
     plt.title(r"DM Mass = %.1e GeV, $m_\phi = %.1e$ upper limit on $\alpha_n$ = %.1e"%(mx, m_phi, limval))
-    plt.savefig("limit_plots_long/profile_mx_%.1e_mphi_%.2e.pdf"%(mx,m_phi))
-    pdf.savefig()
+    if( not make_spec_plot):
+        plt.savefig("limit_plots_long/profile_mx_%.1e_mphi_%.2e.pdf"%(mx,m_phi))
+        pdf.savefig()
     
     ##
 
@@ -348,13 +508,12 @@ plt.loglog( mx_list, limits )
 plt.xlabel("Dark matter mass [GeV]")
 plt.ylabel(r"Upper limit on neutron coupling, $\alpha_n$")
 plt.tight_layout(pad=0)
-plt.savefig("limit_plots_long/limit_plot_%.2e.pdf"%m_phi)
-pdf.savefig()
+if( not make_spec_plot):
+    plt.savefig("limit_plots_long/limit_plot_%.2e.pdf"%m_phi)
+    pdf.savefig()
 
-pdf.close()
-
-#np.savez("limit_plots/limit_data_%.2e.npz"%m_phi, mx_list=mx_list, limits=limits)
-np.savez("limit_plots_long/limit_data_%.2e.npz"%m_phi, mx_list=mx_list, limits=limits)
+    pdf.close()
+    np.savez("limit_plots_long/limit_data_%.2e.npz"%m_phi, mx_list=mx_list, limits=limits)
 
 #plt.show()
 
