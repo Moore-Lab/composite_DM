@@ -16,7 +16,7 @@ SI_to_GeV = 1.87e18
 tthr = 0.005 ## time threshold in s
 repro = True
 remake_coinc_cut = True
-Fernando_path = False
+Fernando_path = True
 
 ## don't use the 20200621 folder since the noise is 50% higher
 if(Fernando_path):

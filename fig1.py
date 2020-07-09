@@ -81,20 +81,20 @@ fig, axs = plt.subplots(2, 1, sharex='col', sharey='row', figsize=(5, 2.5))
 
 (ax1, ax2) = axs
 
-ax1.plot((B[5]-11.9869)*1e3, 1e9*B[6], label = "Inloop")
-ax1.plot((B[5]-11.9869)*1e3, -1e9*B[7], label = "Outloop")
+ax1.plot((B[5]-11.9869)*1e3, 1e9*B[6], label = "In-loop")
+ax1.plot((B[5]-11.9869)*1e3, -1e9*B[7], label = "Out-of-loop")
 ax1.plot(B[4]*1e3, 1e9*B[3]/2., "k:")
 ax1.set_xlim(-0.06*1e3, 0.060*1e3)
-ax1.set_ylim(-3.5, 6)
+ax1.set_ylim(-3, 4)
 ax1.vlines(0.0, -10, 10, colors="grey", alpha = 0.5)
-ax1.legend(frameon=False, bbox_to_anchor=(0.7, 0.47))
+ax1.legend(frameon=False, bbox_to_anchor=(0.65, 0.47))
 
 
 ax2.plot((A[5] - 11.9869)*1e3, 1e9*A[6])
 ax2.plot((A[5] - 11.9869)*1e3, -1e9*A[7])
 ax2.plot(A[4]*1e3, 1e9*A[3]/2., "k:")
 ax2.set_xlim(-0.06*1e3, 0.060*1e3)
-ax2.set_ylim(-2.5, 2.5)
+ax2.set_ylim(-2, 2)
 ax2.vlines(0.0, -10, 10, colors="grey", alpha = 0.5)
 
 fig.text(0.02, 0.55, 'Displacement [nm]', va='center', ha='center', rotation='vertical')
