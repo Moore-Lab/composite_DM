@@ -465,12 +465,14 @@ if(repro):
                 chisq_in = np.min([ichi2a, ichi2b])
 
                 if(False and ipp > 1.0/SI_to_GeV):
+                #if(len(joint_peaks) == 10261 and ipp > 1.5/SI_to_GeV):
                     plt.close('all')
 
                     plt.figure()
                     plt.plot(pdat)
                     plt.plot(tempf*ipp*normf)
                     plt.title( "min chi2, %.2e, best idx, %d"%(chisq_in, 0) )
+                    print (ipp*SI_to_GeV)
                     plt.show()
                 
                 op_s = outpeaks[mop]
@@ -745,8 +747,8 @@ binlist = np.linspace(0,10,200)
 
 ## chi2 cut
 xx = np.linspace(0,10, 1000)
-pin = [0.2e-18, 0, 2.5e-17]
-pout = [0.2e-18, 0, 5e-17]
+pin = [2.7232408203255857e-17, 0, 2.047604324553188e-19]
+pout = [5.179557025786547e-17, 0, 3.7729975602046407e-19]
 plt.figure()
 plt.plot( joint_peaks[gpts,1], joint_peaks[gpts,3], 'k.', ms=1)
 plt.plot(xx, np.polyval(pin, xx), 'r')
