@@ -65,9 +65,9 @@ cdat = (bcaly1 + bcaly2 + bcaly3)/3
 cerr = np.sqrt( bcale1 + bcale2 + bcale3)/3
 
 ## add 0 energy point from analyze_kicks:
-cdat = np.hstack((0.51, cdat))
-cerr = np.hstack((0.02, cerr))
-rx1 = np.hstack((0, rx1))
+#cdat = np.hstack((0.51, cdat))
+#cerr = np.hstack((0.02, cerr))
+#rx1 = np.hstack((0, rx1))
 
 def cfit(x,A,mu,sig):
     return x + np.abs(A)*(1.+erf((mu-x)/sig))
