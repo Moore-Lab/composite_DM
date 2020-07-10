@@ -27,20 +27,20 @@ calculate_index = False # use true only if change filter or index...
 
 Make_npy_FIG1 = False # use it as false for calibration, true for figure for the paper
 
-calibration_date = "20200615"
+calibration_date = "20200619"
 
 if Fernando_path:
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.1V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.4V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.8V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/1.6V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/6.4V"]
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
     if Make_npy_FIG1:
         data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",]
 
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200619/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
@@ -903,7 +903,7 @@ for i in vlist:
 
 
 poptchi2, pcovchi2 = curve_fit(func_x2, Meanx[2:], sigma2_5y[2:])
-pin = [np.abs(poptchi2[0]),0,np.abs(poptchi2[1])]
+pin = [np.abs(poptchi2[1]),0,np.abs(poptchi2[0])]
 
 ## finally, make the chi2 cut:
 plt.figure()
@@ -959,7 +959,7 @@ for i in vlist:
     # plt.legend()
 
 poptchi2, pcovchi2 = curve_fit(func_x2, Meanx[2:], sigma2_5y[2:])
-pout = [np.abs(poptchi2[0]),0,np.abs(poptchi2[1])]
+pout = [np.abs(poptchi2[1]),0,np.abs(poptchi2[0])]
 
 plt.figure()
 plt.plot( joint_peaks[gpts,3]/corr_fac_out, joint_peaks[gpts,7], 'k.', ms=1)
