@@ -748,7 +748,7 @@ binlist = np.linspace(0,10,200)
 ## chi2 cut
 xx = np.linspace(0,10, 1000)
 pin = [2.047604324553188e-19, 0, 2.7232408203255857e-17]
-pout = [[3.7729975602046407e-19, 0, 5.179557025786547e-17]
+pout = [3.7729975602046407e-19, 0, 5.179557025786547e-17]
 plt.figure()
 plt.plot( joint_peaks[gpts,1], joint_peaks[gpts,3], 'k.', ms=1)
 plt.plot(xx, np.polyval(pin, xx), 'r')
