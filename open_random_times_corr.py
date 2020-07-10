@@ -97,7 +97,7 @@ def plot_histogram(a, Nblocks):
     plt.figure()
     for m in newcorr:
         print ("len", m)
-        h, bc = histogram(m, 13)
+        h, bc = histogram(m, 15)
         sigma = []
         for j in h:
             if j == 0:
@@ -125,7 +125,7 @@ def plot_histogram(a, Nblocks):
     return []
 
 
-plot_histogram(a, 10)
+plot_histogram(a, 12)
 
 corr, T = getcorr_timedate(a)
 

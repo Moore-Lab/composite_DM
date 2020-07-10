@@ -17,6 +17,9 @@ tthr = 0.005 ## time threshold in s
 repro = True
 remake_coinc_cut = True
 Fernando_path = True
+calculate_index = False # use true only if change filter or index... MUST BE FALSE TO ANALYSE DATA!!!
+
+do_resolution_random_times = True
 
 ## don't use the 20200621 folder since the noise is 50% higher
 if(Fernando_path):
@@ -85,6 +88,174 @@ def make_template(Fs, f0, gamma_total, dp, Mass):
     a[time_template<0] = 0
     return [a, time_template]
 
+def eleminate_noisy_peaks(timestream, plot):
+    fft_ = np.fft.fft(timestream)
+    freq = np.fft.fftfreq(len(timestream), 1./Fs)
+    fft2 = np.abs(fft_)**2
+    if True:
+        fit_points1 = np.logical_and(freq > -5001, freq < 40.)
+        fit_points2 = np.logical_and(freq > 54.5, freq < 54.7)
+        fit_points3 = np.logical_and(freq > 55.18, freq < 55.44)
+        fit_points4 = np.logical_and(freq > 56.5, freq < 64.5)
+        fit_points5 = np.logical_and(freq > 72.6, freq < 73.0)
+        fit_points6 = np.logical_and(freq > 72.6, freq < 73.51)
+        fit_points7 = np.logical_and(freq > 74.3, freq < 74.7)
+        fit_points8 = np.logical_and(freq > 75.6, freq < 76.0)
+        fit_points9 = np.logical_and(freq > 78.7, freq < 79.5)
+        fit_points10 = np.logical_and(freq > 80.21, freq < 81.46)
+        fit_points11 = np.logical_and(freq > 82.66, freq < 83.55)
+        fit_points12 = np.logical_and(freq > 86.0, freq < 86.4)
+        fit_points13 = np.logical_and(freq > 88.9, freq < 89.2)
+        fit_points14 = np.logical_and(freq > 96.94, freq < 97.4)
+        fit_points15 = np.logical_and(freq > 108, freq < 109)
+        fit_points16 = np.logical_and(freq > 118, freq < 5001)
+        fit_points_n1 = np.logical_and(freq > 39.5, freq < 39.9)
+        fit = fit_points1 + fit_points2 + fit_points3 + fit_points4 + fit_points5 + \
+          fit_points6 + fit_points7 + fit_points8 + fit_points9 + fit_points10 + \
+          fit_points11 + fit_points12 + fit_points13 + fit_points14 + fit_points15 + \
+          fit_points16 + fit_points_n1
+        fit = np.logical_not(fit)
+    p0 = np.array([5e-13, (1e-11) ** 2])
+    popt, pcov = curve_fit(harmonic2, freq[fit][1:-1], fft2[fit][1:-1], p0=p0)
+
+    aux = np.abs(harmonic2(freq, *popt) - fft2)/harmonic2(freq, *popt)
+
+    newfft2 = []
+    newfft = []
+    for i in range(len(aux)):
+        if 1./aux[i] < 0.1:
+            newfft2.append(0.)
+            newfft.append(0.)
+        else:
+            newfft2.append(fft2[i])
+            newfft.append(fft_[i])
+
+    newfft2 = np.array(newfft2)
+    newtimestream = np.fft.ifft(np.array(newfft))
+    newtimestream = np.real(newtimestream)
+
+    if plot:
+        plt.figure()
+        plt.semilogy(freq, fft2)
+        plt.semilogy(freq, 1./aux)
+        plt.semilogy(freq, harmonic2(freq, *popt))
+        plt.figure()
+        plt.loglog(freq, fft2)
+        plt.loglog(freq, newfft2)
+        plt.figure()
+        plt.plot(timestream)
+        plt.plot(newtimestream)
+        plt.show()
+
+    return newtimestream
+
+if not calculate_index:
+    precalculated_index_badfreq = np.load("important_index_badfreq_search.npy")
+
+def eleminate_noisy_peaks_nofit(timestream, plot, calculate_index):
+    fft_ = np.fft.fft(timestream)
+    freq = np.fft.fftfreq(len(timestream), 1./Fs)
+
+    if True:
+        fit_points1 = np.logical_and(freq > 39., freq < 40.)
+        fit_points2 = np.logical_and(freq > 54.5, freq < 54.7)
+        fit_points3 = np.logical_and(freq > 55.18, freq < 55.44)
+        fit_points4 = np.logical_and(freq > 56.3, freq < 57.5)
+        fit_points4_2 = np.logical_and(freq > 59.33, freq < 64.5)
+        fit_points5 = np.logical_and(freq > 72.6, freq < 73.0)
+        fit_points6 = np.logical_and(freq > 72.6, freq < 73.3)
+        fit_points7 = np.logical_and(freq > 74.3, freq < 74.7)
+        fit_points8 = np.logical_and(freq > 75.6, freq < 76.0)
+        fit_points9 = np.logical_and(freq > 78.85, freq < 79.05)
+        fit_points9_2 = np.logical_and(freq > 79.25, freq < 79.4)
+        fit_points10 = np.logical_and(freq > 80.21, freq < 80.58)
+        fit_points10_2 = np.logical_and(freq > 80.9, freq < 81.2)
+        fit_points11 = np.logical_and(freq > 82.75, freq < 83.05)
+        fit_points11_2 = np.logical_and(freq > 83.23, freq < 83.55)
+        fit_points12 = np.logical_and(freq > 86.1, freq < 86.25)
+        fit_points13 = np.logical_and(freq > 88.9, freq < 89.2)
+        # fit_points14 = np.logical_and(freq > 96.94, freq < 97.4)
+        fit_points15 = np.logical_and(freq > 108, freq < 109)
+        fit_points16 = np.logical_and(freq > 118, freq < 122.)
+        fit_points17 = np.logical_and(freq > 24, freq < 33)
+        fit_points18 = np.logical_and(freq > 7.4, freq < 8.5)
+        fit_points19 = np.logical_and(freq > 20.4, freq < 20.9)
+        fit_points20 = np.logical_and(freq > 172., freq < 181.)
+        fit_points21 = np.logical_and(freq > 11.26, freq < 11.31)
+        fit_points22 = np.logical_and(freq > 48.6, freq < 49.01)
+        fit_points_n1 = np.logical_and(freq > 39.5, freq < 39.9)
+
+        fit = fit_points1 + fit_points2 + fit_points3 + fit_points4 + fit_points5 + \
+              fit_points6 + fit_points7 + fit_points8 + fit_points9 + fit_points10 + \
+              fit_points11 + fit_points12 + fit_points13 + fit_points15 + \
+              fit_points16 + fit_points17 + fit_points18 + fit_points19 + fit_points20 + fit_points21 + fit_points_n1 + \
+              fit_points4_2 + fit_points9_2 + fit_points10_2 + fit_points11_2 + fit_points22
+
+    badfreq = np.concatenate((freq[fit], -freq[fit]))
+    if plot:
+        plt.figure()
+        plt.loglog(freq, np.abs(fft_))
+
+    newfft = fft_
+
+    if calculate_index:
+        index = [i for i, x in enumerate(freq) if x in badfreq]
+        np.save("important_index_badfreq_search.npy", index)
+    else:
+        index = precalculated_index_badfreq
+
+    newfft[index] = np.zeros(len(index))
+
+    newtimestream = np.fft.ifft(newfft)
+    newtimestream = np.real(newtimestream)
+
+    if plot:
+        plt.loglog(freq, np.abs(newfft))
+        plt.figure()
+        plt.plot(timestream)
+        plt.plot(newtimestream)
+        plt.show()
+
+    return [newtimestream, index]
+
+def eleminate_noisy_peaks_nofit_templateonly(template, plot, index, lenofmeas):
+
+    lentemp = len(template)
+    lenmeasurement = lenofmeas
+    pad = np.zeros(lenmeasurement - lentemp)
+    template = np.concatenate((template, pad))
+
+    if plot:
+        plt.figure()
+        plt.plot(template)
+
+    fft_ = np.fft.fft(template)
+    freq = np.fft.fftfreq(len(template), 1./Fs)
+
+    if plot:
+        plt.figure()
+        plt.loglog(freq, np.abs(fft_))
+
+    newfft = fft_
+
+    newfft[index] = np.zeros(len(index))
+
+    if plot:
+        plt.loglog(freq, np.abs(newfft))
+
+    newtemplate = np.fft.ifft(newfft)
+    newtemplate = np.real(newtemplate)
+    newtemplate = newtemplate[0:lentemp]
+
+    if plot:
+        plt.figure()
+        plt.plot(newtemplate, label = "new")
+        plt.legend()
+        plt.show()
+
+    return newtemplate
+
+
 #vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance("data")
 vtom_in, vtom_out, f0 = get_v_to_m_and_fressonance(path1)
 print("f0: ",f0)
@@ -98,9 +269,15 @@ temp = make_template(Fs, f0, gam, 1, mass)
 
 #tempt = np.hstack((np.zeros(500), temp[0]))
 b2,a2 = sp.butter(3, (f0/2)/(Fs/2), btype='lowpass')
-b,a = sp.butter(3, np.array([65., 115.])/(Fs/2), btype='bandpass')
+b,a = sp.butter(3, np.array([10., 190.])/(Fs/2), btype='bandpass')
 tempt = temp[0]
 tempf = sp.filtfilt(b,a,tempt)
+
+if not calculate_index:
+    cdaux = getdata((glob.glob(data_list[0] + "/*.h5")[0]))
+    dataux = cdaux[0]
+    lenofmeas = len(dataux[:, 0])
+    tempf = eleminate_noisy_peaks_nofit_templateonly(tempf, False, precalculated_index_badfreq, lenofmeas)
 
 normf = np.sum( tempf**2 )
 tempt #/= np.sum( tempt**2 )
@@ -167,11 +344,12 @@ for calfile, d in zip(cal_list, data_list):
         ecilist.append(eng_cal_pars[0])
         ecolist.append(eng_cal_pars[1])
         siglist.append(ccal['sigval'])
-        
+
 if(repro):
     ## now load each file and process the data for kicks
     joint_peaks = []
     file_offset = 0
+    randomsave_list = []
     for fi, f in enumerate(flist[::1]):
         
         print(f)
@@ -211,9 +389,36 @@ if(repro):
         outdatf_outband = np.std(sp.filtfilt(bstop,astop,outdat))
         indatf2_outband = np.std(sp.filtfilt(bstop2,astop2,sp.filtfilt(bstop,astop,indat)))
         outdatf2_outband = np.std(sp.filtfilt(bstop2,astop2,sp.filtfilt(bstop,astop,outdat)))
-        
+
+        ## may seem strange to define harmonic2 here, but things inside of it depend on the calibration date
+        ## these are related to f0 and gamma. Despite changing from dates, it does not pose as a bad thing to use only day 15
+        # def harmonic2(f, A, C):
+        #     f0 = get_v_to_m_and_fressonance(path1)[2]
+        #     gamma = get_gammas(path1)
+        #     w0 = 2. * np.pi * np.abs(f0)
+        #     w = 2. * np.pi * f
+        #     gamma = 2.0 * np.pi * gamma
+        #     # at this point gamma is \Gamma_0 (latex notation)
+        #     a1 = 1. * np.abs(A)
+        #     a3 = 1. * (w0 ** 2 - w ** 2) ** 2 + (w * gamma) ** 2
+        #
+        #     s = 1. * a1 / a3
+        #
+        #     return np.sqrt(s + C)
+
+        indatf, indexbad = eleminate_noisy_peaks_nofit(indatf, False, calculate_index)
+        outdatf, indexbad = eleminate_noisy_peaks_nofit(outdatf, False, calculate_index)
+
         incorr = sp.correlate(indatf, tempf, mode='same')
         outcorr = sp.correlate(outdatf, tempf, mode='same')
+
+
+        if do_resolution_random_times and np.random.uniform(0,1) > 0.6: ## get the random times corr. To be read by another code
+            index = int(np.random.uniform(0,len(incorr)-1))
+            print ("resolution random time", f, incorr[index]*SI_to_GeV, index)
+            randomsave_list.append([f, incorr[index]*SI_to_GeV, index])
+        np.save("random_times_corr_inloop2.npy", randomsave_list)
+
 
         ## now the local maxima
         incorrf = sp.filtfilt(b2,a2,np.sqrt(incorr**2))
@@ -554,7 +759,8 @@ chi2_cut = np.logical_and( joint_peaks[:,3] < np.polyval(pin, joint_peaks[:,1]),
 
 
 ## apply energy calibration (accounts for search bias) -- fix hardcoded parameters
-ebpc = [0.33882171, 0.19736197, 0.95576589] ##[ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
+ebpc = [0.33882171, 0.19736197, 0.95576589]
+ebpc = [0.12841173, 0.50727263, 0.42810528] ##[ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
 #ebpc = np.load("combined_recon_cal.npy") ## from find_combined_cal_params.py
 def cfit(x,A,mu,sig):
     return x + A*(1+erf((mu-x)/sig))

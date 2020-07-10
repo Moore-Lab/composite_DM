@@ -23,23 +23,24 @@ SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
 repro = True # Set true to reprocess data, false to read from file
 Fernando_path = True
+calculate_index = False # use true only if change filter or index...
 
-Make_npy_FIG1 = False # use it as false for calibration
+Make_npy_FIG1 = False # use it as false for calibration, true for figure for the paper
 
-calibration_date = "20200619"
+calibration_date = "20200615"
 
 if Fernando_path:
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.1V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/1.6V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/6.4V"]
     if Make_npy_FIG1:
         data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",]
 
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200619/important_npy"
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
@@ -76,6 +77,182 @@ else:
 #              "data/20200619/kick/0.1ms/1.6V",
 #              "data/20200619/kick/0.1ms/3.2V",
 #              "data/20200619/kick/0.1ms/6.4V"]
+
+def histogram(c, bins):
+    h, b = np.histogram(c, bins = bins)
+    bc = np.diff(b)/2. + b[:-1]
+    return [h, bc]
+
+def gauss(x, a, b, c):
+    g = c*np.exp(-0.5*((x-a)/b)**2)
+    return g
+
+# DO NOT USE eleminate_noisy_peaks as it removes real signals
+def eleminate_noisy_peaks(timestream, plot):
+    fft_ = np.fft.fft(timestream)
+    freq = np.fft.fftfreq(len(timestream), 1./Fs)
+    fft2 = np.abs(fft_)**2
+    if True:
+        fit_points1 = np.logical_and(freq > -5001, freq < 40.)
+        fit_points2 = np.logical_and(freq > 54.5, freq < 54.7)
+        fit_points3 = np.logical_and(freq > 55.18, freq < 55.44)
+        fit_points4 = np.logical_and(freq > 56.5, freq < 64.5)
+        fit_points5 = np.logical_and(freq > 72.6, freq < 73.0)
+        fit_points6 = np.logical_and(freq > 72.6, freq < 73.51)
+        fit_points7 = np.logical_and(freq > 74.3, freq < 74.7)
+        fit_points8 = np.logical_and(freq > 75.6, freq < 76.0)
+        fit_points9 = np.logical_and(freq > 78.7, freq < 79.5)
+        fit_points10 = np.logical_and(freq > 80.21, freq < 81.46)
+        fit_points11 = np.logical_and(freq > 82.66, freq < 83.55)
+        fit_points12 = np.logical_and(freq > 86.0, freq < 86.4)
+        fit_points13 = np.logical_and(freq > 88.9, freq < 89.2)
+        fit_points14 = np.logical_and(freq > 96.94, freq < 97.4)
+        fit_points15 = np.logical_and(freq > 108, freq < 109)
+        fit_points16 = np.logical_and(freq > 118, freq < 5001)
+        fit_points_n1 = np.logical_and(freq > 39.5, freq < 39.9)
+        fit = fit_points1 + fit_points2 + fit_points3 + fit_points4 + fit_points5 + \
+          fit_points6 + fit_points7 + fit_points8 + fit_points9 + fit_points10 + \
+          fit_points11 + fit_points12 + fit_points13 + fit_points14 + fit_points15 + \
+          fit_points16 + fit_points_n1
+        fit = np.logical_not(fit)
+    p0 = np.array([5e-13, (1e-11) ** 2, 30.])
+    popt, pcov = curve_fit(harmonic3, freq[fit][1:-1], fft2[fit][1:-1], p0=p0)
+
+    aux = np.abs(harmonic3(freq, *popt) - fft2)/harmonic3(freq, *popt)
+
+    newfft2 = []
+    newfft = []
+    for i in range(len(aux)):
+        if 1./aux[i] < 0.1:
+            newfft2.append(0.)
+            newfft.append(0.)
+        else:
+            newfft2.append(fft2[i])
+            newfft.append(fft_[i])
+
+    newfft2 = np.array(newfft2)
+    newtimestream = np.fft.ifft(np.array(newfft))
+    newtimestream = np.real(newtimestream)
+
+    if plot:
+        plt.figure()
+        plt.semilogy(freq, fft2)
+        plt.semilogy(freq, 1./aux)
+        plt.semilogy(freq, harmonic3(freq, *popt))
+        plt.figure()
+        plt.loglog(freq, fft2)
+        plt.loglog(freq, newfft2)
+        plt.figure()
+        plt.plot(timestream)
+        plt.plot(newtimestream)
+        plt.show()
+
+    return newtimestream # #
+
+if not calculate_index:
+    precalculated_index_badfreq = np.load("important_index_badfreq_calibration.npy")
+
+def eleminate_noisy_peaks_nofit(timestream, plot, calculate_index):
+    fft_ = np.fft.fft(timestream)
+    freq = np.fft.fftfreq(len(timestream), 1./Fs)
+
+    if True:
+        fit_points1 = np.logical_and(freq > 39., freq < 40.)
+        fit_points2 = np.logical_and(freq > 54.5, freq < 54.7)
+        fit_points3 = np.logical_and(freq > 55.18, freq < 55.44)
+        fit_points4 = np.logical_and(freq > 56.3, freq < 57.5)
+        fit_points4_2 = np.logical_and(freq > 59.33, freq < 64.5)
+        fit_points5 = np.logical_and(freq > 72.6, freq < 73.0)
+        fit_points6 = np.logical_and(freq > 72.6, freq < 73.3)
+        fit_points7 = np.logical_and(freq > 74.3, freq < 74.7)
+        fit_points8 = np.logical_and(freq > 75.6, freq < 76.0)
+        fit_points9 = np.logical_and(freq > 78.85, freq < 79.05)
+        fit_points9_2 = np.logical_and(freq > 79.25, freq < 79.4)
+        fit_points10 = np.logical_and(freq > 80.21, freq < 80.58)
+        fit_points10_2 = np.logical_and(freq > 80.9, freq < 81.2)
+        fit_points11 = np.logical_and(freq > 82.75, freq < 83.05)
+        fit_points11_2 = np.logical_and(freq > 83.23, freq < 83.55)
+        fit_points12 = np.logical_and(freq > 86.1, freq < 86.25)
+        fit_points13 = np.logical_and(freq > 88.9, freq < 89.2)
+        # fit_points14 = np.logical_and(freq > 96.94, freq < 97.4)
+        fit_points15 = np.logical_and(freq > 108, freq < 109)
+        fit_points16 = np.logical_and(freq > 118, freq < 122.)
+        fit_points17 = np.logical_and(freq > 24, freq < 33)
+        fit_points18 = np.logical_and(freq > 7.4, freq < 8.5)
+        fit_points19 = np.logical_and(freq > 20.4, freq < 20.9)
+        fit_points20 = np.logical_and(freq > 172., freq < 181.)
+        fit_points21 = np.logical_and(freq > 11.26, freq < 11.31)
+        fit_points22 = np.logical_and(freq > 48.6, freq < 49.01)
+        fit_points_n1 = np.logical_and(freq > 39.5, freq < 39.9)
+
+        fit = fit_points1 + fit_points2 + fit_points3 + fit_points4 + fit_points5 + \
+              fit_points6 + fit_points7 + fit_points8 + fit_points9 + fit_points10 + \
+              fit_points11 + fit_points12 + fit_points13 + fit_points15 + \
+              fit_points16 + fit_points17 + fit_points18 + fit_points19 + fit_points20 + fit_points21 + fit_points_n1 + \
+              fit_points4_2 + fit_points9_2 + fit_points10_2 + fit_points11_2 + fit_points22
+
+    badfreq = np.concatenate((freq[fit], -freq[fit]))
+    if plot:
+        plt.figure()
+        plt.loglog(freq, np.abs(fft_))
+
+    newfft = fft_
+
+    if calculate_index:
+        index = [i for i, x in enumerate(freq) if x in badfreq]
+        np.save("important_index_badfreq_calibration.npy", index)
+    else:
+        index = precalculated_index_badfreq
+
+    newfft[index] = np.zeros(len(index))
+
+    newtimestream = np.fft.ifft(newfft)
+    newtimestream = np.real(newtimestream)
+
+    if plot:
+        plt.loglog(freq, np.abs(newfft))
+        plt.figure()
+        plt.plot(timestream)
+        plt.plot(newtimestream)
+        plt.show()
+
+    return [newtimestream, index]
+
+def eleminate_noisy_peaks_nofit_templateonly(template, plot, index, lenmeasurement):
+
+    lentemp = len(template)
+    pad = np.zeros(lenmeasurement - lentemp)
+    template = np.concatenate((template, pad))
+
+    if plot:
+        plt.figure()
+        plt.plot(template)
+
+    fft_ = np.fft.fft(template)
+    freq = np.fft.fftfreq(len(template), 1./Fs)
+
+    if plot:
+        plt.figure()
+        plt.loglog(freq, np.abs(fft_))
+
+    newfft = fft_
+
+    newfft[index] = np.zeros(len(index))
+
+    if plot:
+        plt.loglog(freq, np.abs(newfft))
+
+    newtemplate = np.fft.ifft(newfft)
+    newtemplate = np.real(newtemplate)
+    newtemplate = newtemplate[0:lentemp]
+
+    if plot:
+        plt.figure()
+        plt.plot(newtemplate, label = "new")
+        plt.legend()
+        plt.show()
+
+    return newtemplate
 
 def get_color_map( n ):
     jet = plt.get_cmap('jet') 
@@ -152,11 +329,18 @@ temp = make_template(Fs, f0, gam, 1, mass)
 
 #tempt = np.hstack((np.zeros(500), temp[0]))
 tempt = temp[0]
-b,a = sp.butter(3, np.array([65., 115.])/(Fs/2), btype='bandpass')
+b,a = sp.butter(3, np.array([10., 190.])/(Fs/2), btype='bandpass')
 if Make_npy_FIG1:
     b,a = sp.butter(3, np.array([65., 115.])/(Fs/2), btype='bandpass')
 b2,a2 = sp.butter(3, (f0/2)/(Fs/2), btype='lowpass')
 tempf = sp.filtfilt(b,a,tempt)
+
+if not calculate_index:
+    cdaux = getdata((glob.glob(data_list[0] + "/*.h5")[0]))
+    dataux = cdaux[0]
+    lenofmeas = len(dataux[:, 0])
+    print (lenofmeas)
+    tempf = eleminate_noisy_peaks_nofit_templateonly(tempf, False, precalculated_index_badfreq, lenofmeas)
 
 normf = np.sum( tempf**2 )
 #tempt #/= np.sum( tempt**2 )
@@ -259,6 +443,22 @@ if(repro):
         outdatf_outband = np.std(sp.filtfilt(bstop,astop,outdat))
         indatf2_outband = np.std(sp.filtfilt(bstop2,astop2,sp.filtfilt(bstop,astop,indat)))
         outdatf2_outband = np.std(sp.filtfilt(bstop2,astop2,sp.filtfilt(bstop,astop,outdat)))
+
+        # def harmonic3(f, A, C, gamma):
+        #     f0 = get_v_to_m_and_fressonance(path1)[2]
+        #     w0 = 2. * np.pi * np.abs(f0)
+        #     w = 2. * np.pi * f
+        #     gamma = 2.0 * np.pi * gamma
+        #     # at this point gamma is \Gamma_0 (latex notation)
+        #     a1 = 1. * np.abs(A)
+        #     a3 = 1. * (w0 ** 2 - w ** 2) ** 2 + (w * gamma) ** 2
+        #
+        #     s = 1. * a1 / a3
+        #
+        #     return np.sqrt(s + C)
+
+        indatf, indexbad = eleminate_noisy_peaks_nofit(indatf, False, calculate_index)
+        outdatf, indexbad = eleminate_noisy_peaks_nofit(outdatf, False, calculate_index)
         
         incorr = sp.correlate(indatf, tempf, mode='same')
         outcorr = sp.correlate(outdatf, tempf, mode='same')
@@ -498,9 +698,9 @@ for i,v in enumerate(vlist):
 
     ## find trigger efficiency and random coincident rate (in loop)
     plt.figure(fig_in.number)
-    hh, be = np.histogram( cdat[:,2], range=(-tthr,tthr), bins=50 )
+    hh, be = np.histogram( cdat[:,2], range=(-tthr,tthr), bins=150 )
     bc = be[:-1]+np.diff(be)/2
-    blpts = np.logical_or(bc < -0.015, bc > 0.015)
+    blpts = np.logical_or(bc < -0.007, bc > 0.008)
     baseline = np.mean(hh[blpts])
     plt.errorbar(bc, hh-baseline, yerr=np.sqrt(hh), fmt='o', label=str(gev_list[i]), color=cols[i])
     ## now gauss + const fit
@@ -517,9 +717,9 @@ for i,v in enumerate(vlist):
 
     ## find trigger efficiency and random coincident rate (out loop)
     plt.figure(fig_out.number)
-    hh, be = np.histogram( cdat[:,4], range=(-tthr,tthr), bins=50 )
+    hh, be = np.histogram( cdat[:,4], range=(-tthr,tthr), bins=150 )
     bc = be[:-1]+np.diff(be)/2
-    blpts = np.logical_or(bc < -0.015, bc > 0.015)
+    blpts = np.logical_or(bc < -0.007, bc > 0.008)
     baseline = np.mean(hh[blpts])
     plt.errorbar(bc, hh-baseline, yerr=np.sqrt(hh), fmt='o', label=str(gev_list[i]), color=cols[i])
     ## now gauss + const fit
@@ -572,8 +772,8 @@ spars = [0.299019, 0.56726896, 0.93185983]
 ecbp, ecbc = curve_fit(cfit, gev_list, mean_list[:,0]/corr_fac_in,  p0=spars,  maxfev=10000)
 #ecbp = [ 0.52721076, -0.04189387, 1.62850192] # this is what david finds
 plt.plot( xx, cfit(xx, *ecbp), 'k')
-fern = [0.33882171, 0.19736197, 0.95576589] # this is what fernando finds and it is hard coded in the analysis code too. Both david and fernando number result in similar results.
-ecbp = fern
+#fern = [0.33882171, 0.19736197, 0.95576589] # this is what fernando finds and it is hard coded in the analysis code too. Both david and fernando number result in similar results.
+#ecbp = fern
 plt.plot( xx, cfit(xx, *ecbp), 'k:')
 
 print("Energy cal params: ", ecbp)
@@ -661,21 +861,116 @@ print("In loop recon eff params: ", bpi)
 #### done calculating in/out loop amplitude matching efficiency
 
 
+#### new chi2 inloop
+def func_x2(x,a,c):
+    return np.abs(a) + np.abs(c)*x**2
+gpts = np.logical_and( joint_peaks[:,2]>-0.0, joint_peaks[:,2]<0.0005 )
+
+sigma2_5y = []
+Meanx = []
+for i in vlist:
+    yyy = []
+    xxx = []
+    for j in range(len(joint_peaks[gpts,5])):
+        if i == joint_peaks[gpts,5][j]:
+            yyy.append(joint_peaks[gpts,6][j])
+            xxx.append(joint_peaks[gpts,1][j]/corr_fac_in)
+    yyy = np.array(yyy)
+    xxx = np.array(xxx)
+    Meanx.append(np.mean(xxx))
+    # h, bc = histogram(yyy, 12)
+    # sigma = []
+    # for qq in h:
+    #     if qq == 0:
+    #         sigma.append(1.)
+    #     else:
+    #         sigma.append(qq ** 0.5)
+    # if i > 0.2:
+    #     ppo, cco = curve_fit(gauss, bc, h, p0 = [4e-17, 3e-18, 5], sigma = sigma)
+    #     #sigma2_5y.append(np.abs(ppo[0]) + 2.5 * np.abs(ppo[1]))
+    #     sigma2_5y.append(np.mean(yyy) + 2.5 * np.std(yyy))
+    # else:
+    #     sigma2_5y.append(np.mean(yyy)+2.5*np.std(yyy))
+    for m in range(len(yyy)):
+        if yyy[m] > np.mean(yyy) + 3.5 * np.std(yyy):
+            yyy[m] = 0
+    sigma2_5y.append(np.mean(yyy) + 2.5 * np.std(yyy))
+    # plt.figure()
+    # plt.plot(bc, h, ".", label = str(i))
+    # rrr = np.linspace(0.9*np.min(bc), 1.1*np.max(bc), 100)
+    # plt.plot(rrr, gauss(rrr, *ppo))
+    # plt.legend()
+
+
+poptchi2, pcovchi2 = curve_fit(func_x2, Meanx[2:], sigma2_5y[2:])
+pin = [np.abs(poptchi2[0]),0,np.abs(poptchi2[1])]
 
 ## finally, make the chi2 cut:
 plt.figure()
-gpts = np.logical_and( joint_peaks[:,2]>-0.0005, joint_peaks[:,2]<0.0015 )
 #plt.plot( joint_peaks[:,1], joint_peaks[:,6], 'k.', ms=1)
-plt.plot( joint_peaks[gpts,1], joint_peaks[gpts,6], 'k.', ms=1)
-pin = [0.2e-18, 0, 2.5e-17]
-plt.plot(xx, np.polyval(pin, xx), 'r')
-pass_cut = joint_peaks[gpts,6] < np.polyval(pin, joint_peaks[gpts,1])
+plt.plot( joint_peaks[gpts,1]/corr_fac_in, joint_peaks[gpts,6], 'k.', ms=1)
+plt.plot( Meanx , sigma2_5y, 'ro')
+plt.plot(xx, func_x2(xx, *poptchi2))
+#plt.plot(xx, np.polyval(pin, xx))
+#plt.plot( joint_peaks[gpts,1]/corr_fac_in, func_x2(joint_peaks[gpts,1]/corr_fac_in, *poptchi2)  )
+
+#pin = [0.2e-18, 0, 2.5e-17]
+#plt.plot(xx, np.polyval(pin, xx), 'r')
+pass_cut = joint_peaks[gpts,6] < func_x2(joint_peaks[gpts,1]/corr_fac_in, *poptchi2)
+
+##### inloop chi2 ended
+
+#### new chi2 outloop
+
+sigma2_5y = []
+Meanx = []
+for i in vlist:
+    yyy = []
+    xxx = []
+    for j in range(len(joint_peaks[gpts,5])):
+        if i == joint_peaks[gpts,5][j]:
+            yyy.append(joint_peaks[gpts,7][j])
+            xxx.append(joint_peaks[gpts,3][j]/corr_fac_out)
+    yyy = np.array(yyy)
+    xxx = np.array(xxx)
+    Meanx.append(np.mean(xxx))
+    # h, bc = histogram(yyy, 7)
+    # sigma = []
+    # for qq in h:
+    #     if qq == 0:
+    #         sigma.append(1.)
+    #     else:
+    #         sigma.append(qq ** 0.5)
+    # if i > 0.2:
+    #     ppo, cco = curve_fit(gauss, bc, h, p0 = [3e-17, 3e-18, 5], sigma = sigma)
+    #     sigma2_5y.append(np.abs(ppo[0]) + 2.5 * np.abs(ppo[1]))
+    # else:
+    #     sigma2_5y.append(np.mean(yyy)+2.5*np.std(yyy))
+
+    for m in range(len(yyy)):
+        if yyy[m] > np.mean(yyy) + 3.5 * np.std(yyy):
+            yyy[m] = 0
+
+    sigma2_5y.append(np.mean(yyy) + 2.5 * np.std(yyy))
+    # plt.figure()
+    # plt.plot(bc, h, ".", label = str(i))
+    # rrr = np.linspace(0.9*np.min(bc), 1.1*np.max(bc), 100)
+    # plt.plot(rrr, gauss(rrr, *ppo))
+    # plt.legend()
+
+poptchi2, pcovchi2 = curve_fit(func_x2, Meanx[2:], sigma2_5y[2:])
+pout = [np.abs(poptchi2[0]),0,np.abs(poptchi2[1])]
 
 plt.figure()
-plt.plot( joint_peaks[gpts,3], joint_peaks[gpts,7], 'k.', ms=1)
-pout = [0.2e-18, 0, 5e-17]
-plt.plot(xx, np.polyval(pout, xx), 'r')
-pass_cut = np.logical_and( joint_peaks[gpts,6] < np.polyval(pin, joint_peaks[gpts,1]), joint_peaks[gpts,7] < np.polyval(pout, joint_peaks[gpts,3]))
+plt.plot( joint_peaks[gpts,3]/corr_fac_out, joint_peaks[gpts,7], 'k.', ms=1)
+#plt.plot(xx, np.polyval(pout, xx), 'r')
+plt.plot( Meanx , sigma2_5y, 'ro')
+plt.plot(xx, func_x2(xx, *poptchi2))
+pass_cut = np.logical_and( pass_cut , joint_peaks[gpts,7] < func_x2(joint_peaks[gpts,3]/corr_fac_in, *poptchi2) )
+
+##### outloop chi2 ended
+
+print (pout, pin)
 
 print("Cut efficiency, out+in: ", np.sum(pass_cut)/len(pass_cut))
 
