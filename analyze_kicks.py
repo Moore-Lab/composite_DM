@@ -13,13 +13,14 @@ Fs = 1e4
 mass = 1.03e-12 # kg
 flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
+sigma_inloop = 0.17
 tthr = 0.005 ## time threshold in s
-repro = True
-remake_coinc_cut = True
-Fernando_path = True
+repro = False
+remake_coinc_cut = False
+Fernando_path = False
 calculate_index = False # use true only if change filter or index... MUST BE FALSE TO ANALYSE DATA!!!
 
-do_resolution_random_times = True
+do_resolution_random_times = False
 
 ## don't use the 20200621 folder since the noise is 50% higher
 if(Fernando_path):
@@ -417,7 +418,7 @@ if(repro):
             index = int(np.random.uniform(0,len(incorr)-1))
             print ("resolution random time", f, incorr[index]*SI_to_GeV, index)
             randomsave_list.append([f, incorr[index]*SI_to_GeV, index])
-        np.save("random_times_corr_inloop2.npy", randomsave_list)
+            np.save("random_times_corr_inloop2.npy", randomsave_list)
 
 
         ## now the local maxima
@@ -761,20 +762,28 @@ chi2_cut = np.logical_and( joint_peaks[:,3] < np.polyval(pin, joint_peaks[:,1]),
 
 
 ## apply energy calibration (accounts for search bias) -- fix hardcoded parameters
-ebpc = [0.33882171, 0.19736197, 0.95576589]
-ebpc = [0.12841173, 0.50727263, 0.42810528] ##[ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
-#ebpc = np.load("combined_recon_cal.npy") ## from find_combined_cal_params.py
+#ebpc = [0.33882171, 0.19736197, 0.95576589]
+#ebpc = [0.12841173, 0.50727263, 0.42810528] ##[ 0.52721076, -0.04189387, 1.62850192] ## energy calibration from cal pulses
+ebpc = np.load("combined_recon_cal.npy") ## from find_combined_cal_params.py
 def cfit(x,A,mu,sig):
     return x + A*(1+erf((mu-x)/sig))
 
 e_orig = joint_peaks[:,1]
 e_xx = np.linspace(0, 10, 1000)
-c_xx = cfit(e_xx, *ebpc)
+c_xx = cfit(e_xx, *ebpc) - e_xx
+new_e_xx = cfit(e_xx, *ebpc)
+search_bias = np.interp( e_orig, new_e_xx, c_xx) ## by default fills in out of range values how we want
+e_cal = e_orig - search_bias
+
+## don't throw out negative values, our best estimate for them is 0 (smeared by resolution)
+nneg = np.sum(e_cal < 0)
+e_cal[e_cal < 0] = np.abs(np.random.randn( nneg )*sigma_inloop)
+
 # plt.close('all')
 # plt.figure()
-# plt.plot(c_xx, e_xx)
+# plt.plot(e_orig, search_bias)
 # plt.show()
-e_cal = np.interp( e_orig, c_xx, e_xx)
+
 
 
 ## make plot of points passing all cuts
@@ -821,7 +830,7 @@ s_to_day = exposure/(24*3600)
 xx = np.linspace(0,2,1000)
 
 plt.figure()
-#plt.errorbar( bc, hh/s_to_day, yerr=np.sqrt(hh)/s_to_day, fmt='r.')
+plt.errorbar( bc, hh/s_to_day, yerr=np.sqrt(hh)/s_to_day, fmt='r.')
 plt.errorbar( bc, hh2/s_to_day, yerr=np.sqrt(hh2)/s_to_day, fmt='k.')
 #plt.plot(xx, total_fit(xx, *bp), 'k')
 plt.yscale('log')
