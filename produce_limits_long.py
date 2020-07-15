@@ -14,12 +14,16 @@ from scipy.interpolate import UnivariateSpline as us
 
 m_phi = float(sys.argv[1]) #0
 
+## fraction of dark matter that is nuggets of this type:
+nugg_frac = 0.1
+
 o = open("drdq_interp_grace_%.2e.pkl"%m_phi, 'rb')
 fdict = pickle.load(o)
 o.close()
 
 ## nuiscance paramters for systematics:
-gscale_mu, gscale_sig = 1.0, 1.0  ## weak constraint for background
+gscale1_mu, gscale1_sig = 1.0, 1.0  ## weak constraint for background
+gscale2_mu, gscale2_sig = 1.0, 1.0  ## weak constraint for background
 escale_mu, escale_sig = 1.0, 0.05/3.999 ## syst error on electrode spacing
 nneut_mu, nneut_sig = 1.0, 0.33 ## syst error on number of neutrons
 
@@ -38,7 +42,7 @@ def get_color_map( n, mname = 'jet' ):
 ## make paper spectrum plot
 make_spec_plot = False
 spec_plot_vals = [[1, 2.1e-8],
-                  [0.1, 1.5e-8],
+                  [0.1, 1.18e-8],
                   [0.01, 3.3e-9],
                   [0, 2.1e-9]]
 spec_plot_mass = 5e3
@@ -74,7 +78,7 @@ fold = True # uses single gaussian and only shows abs value of the kick
 #https://colorfuldots.com/color/#e9531e
 
 if(not make_spec_plot):
-    pdf = PdfPages('limit_plots_long/limit_plots_m_phi_%.2e.pdf'%m_phi)
+    pdf = PdfPages('limit_plots_long/limit_plots_m_phi_%.2e_nugg_frac_%.2e.pdf'%(m_phi,nugg_frac))
 
 
 dat = np.load("dm_data.npz") #, dp=bc, cts = hh2/s_to_day, err=np.sqrt(hh2)/s_to_day)
@@ -83,7 +87,7 @@ h = dat['cts']
 sigma = np.sqrt(h)
 Exposuretime = dat['expo']*24*3600.
 
-cut_eff = 0.972 * 0.929 * 0.95  #efficiency of acceleromter cut, chi2 cut, amp cut
+cut_eff = 0.974 * 0.959 * 0.95  #efficiency of acceleromter cut, chi2 cut, amp cut
 Exposuretime *= cut_eff
 
 ## energy threshold
@@ -105,14 +109,24 @@ mx_list = sorted(fdict.keys())
 
 limits = np.zeros_like(mx_list)
 
-def gauss_fit(x, A, mu, sig):
-    return np.abs(A)*np.exp( -(x-mu)**2/(2*sig**2) )
+def gauss_fit(x, A, sig):
+    return np.abs(A)*np.exp( -x**2/(2*sig**2) )
 
 def log_gauss_fit(x, A, mu, sig):
     return np.abs(A)/x*np.exp( -(np.log(x)-mu)**2/(2*sig**2) )
 
-def total_fit(x,A1,mu1,sig1,A2,mu2,sig2):
-    return gauss_fit(x,A1,mu1,sig1) + log_gauss_fit(x,A2,mu2,sig2)
+def total_fit(x,A1,sig1): #,A2,mu2,sig2):
+    return gauss_fit(x,A1,sig1) #+ 0*log_gauss_fit(x,A2,mu2,sig2)
+
+def cball_fit(x, Amp, sig, alpha, n):
+    A = (n*sig/alpha)**n * np.exp(-alpha**2/(2*sig**2))
+    B = n*sig/alpha - alpha/sig
+
+    p1 = np.exp( -x**2/(2*sig**2))
+    p2 = A*(B + x/sig)**(-n)
+
+    p1[ x > alpha] = p2[x > alpha]
+    return Amp*p1
 
 def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
     return A1*(1+erf((x-mu1)/(np.sqrt(2)*sig1)))/2 + A2*(1+erf((np.log(x)-mu2)/(np.sqrt(2)*sig2)))/2
@@ -123,23 +137,26 @@ def ffnerf(x, A1, mu1, sig1, A2, mu2, sig2):
 ysig = np.sqrt(h)
 ysig[ysig==0] = 1
 cts_per_day = Exposuretime/(24*3600.)
-spars = [40000/cts_per_day, 0, 0.35] # 80/cts_per_day, 1e-3, 0.2]
+#spars = [40000/cts_per_day, 0, 0.35] # 80/cts_per_day, 1e-3, 0.2]
+#spars = [40000/cts_per_day, 0.35, 80/cts_per_day, 1e-3, 0.2]
+spars = [ 1.81436062e+05,  2.32744182e-01] #  1.34924320e+03, -8.25155098e-01, 1.90743776e-01]
 fpts = np.logical_and(bc>0.07,bc<1.2)
-bp, bcov = opt.curve_fit( gauss_fit, bc[fpts], h[fpts]/cts_per_day, sigma=ysig[fpts]/cts_per_day, p0=spars, maxfev=100000 ) 
+bp, bcov = opt.curve_fit( total_fit, bc[fpts], h[fpts]/cts_per_day, sigma=ysig[fpts]/cts_per_day, p0=spars, maxfev=100000 ) 
 #bp = spars
 print(bp)
 
 xx = np.linspace(0.05,2,1000)
 binsize = bc[1]-bc[0]
 
-def rescaled_model( xv, model, bg, data, qvals ):
+def rescaled_model( xv, model, bg1, data, qvals ):
     escale = xv[0]
-    gscale = xv[1]
+    gscale1 = xv[1]
     nneut = xv[2]
     ## rescale DM model by escale and error on number of neutrons
     new_model = np.interp( qvals, escale*qvals, model/escale, left=0, right=0 ) * nneut**2
-    new_bg = gscale * bg
-    tot_mod = new_model + new_bg
+    new_bg1 = gscale1 * bg1  ## gauss term
+    #new_bg2 = gscale2 * bg2  ## log gauss term
+    tot_mod = new_model + new_bg1 #+ new_bg2
 
     ## remove any bad values from the model
     tot_mod[ tot_mod < 1e-30 ] = 1e-30 ## minimum value so the log doesn't overflow
@@ -153,14 +170,14 @@ def rescaled_model( xv, model, bg, data, qvals ):
     else:
         nneut_term = (nneut - nneut_mu)**2/(2*nneut_sig**2)
 
-    gauss_term = (escale - escale_mu)**2/(2*escale_sig**2) + (gscale - gscale_mu)**2/(2*gscale_sig**2) + nneut_term
+    gauss_term = (escale - escale_mu)**2/(2*escale_sig**2) + (gscale1 - gscale1_mu)**2/(2*gscale1_sig**2) + nneut_term
     return -np.sum( data[sidx:] * np.log(tot_mod[sidx:]) - tot_mod[sidx:] ) + gauss_term + LLoffset
 
     
-def logL( model, data, bg, qvals):
+def logL( model, data, bg1, qvals):
     
     ## profile over best gaussian amplitude, escale
-    res = minimize( rescaled_model, (1.0, 1.0, 1.0), args=(model, bg, data, qvals), tol=0.1 )
+    res = minimize( rescaled_model, (1.0, 1.0, 1.0), args=(model, bg1, data, qvals), tol=0.1 )
 
     if( not res.success and not res.status==2):
         #print( "optimization failed" )
@@ -170,13 +187,14 @@ def logL( model, data, bg, qvals):
 
     best_like = res.fun
     best_ea = xvals[0]
-    best_ga = xvals[1]
+    best_ga1 = xvals[1]
+    #best_ga2 = xvals[2]
     best_nn = xvals[2]
     new_model = np.interp( qvals, best_ea*qvals, model/best_ea, left=0, right=0 )
-    new_bg = best_ga * bg
+    new_bg = best_ga1 * bg1 #+ best_ga2 * bg2
     best_model = new_model + new_bg
     
-    return best_like, best_ea, best_ga, best_nn, best_model
+    return best_like, best_ea, best_ga1, best_nn, best_model
 
 
 
@@ -190,10 +208,12 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         ## bin size correction
         
         plt.errorbar(bc, h/cts_per_day * 1/binsize, yerr = sigma/cts_per_day * 1/binsize, fmt = "k.")#, color = "#7c1ee9")
-        plt.plot(xx, gauss_fit(xx, *bp) * 1/binsize, 'k:')
+        plt.plot(xx, total_fit(xx, *bp) * 1/binsize, 'k:')
     else:
         plt.errorbar(bc, h/cts_per_day, yerr = sigma/cts_per_day, fmt = "k.")#, color = "#7c1ee9")
-        plt.plot(xx, gauss_fit(xx, *bp), 'k')
+        #plt.plot(xx, gauss_fit(xx, *bp[0:2]), 'k:')
+        #plt.plot(xx, log_gauss_fit(xx, *bp[2:]), 'k--')
+        plt.plot(xx, total_fit(xx, *bp), 'k')
         
     plt.yscale('log')
     plt.xlim([0,5])
@@ -224,21 +244,22 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             dm_rate[np.isnan(dm_rate)] = 0
 
             dm_vec = np.zeros_like(bc)
-            bg_vec = np.zeros_like(bc)
+            bg_vec1 = np.zeros_like(bc)
             for i in range(len(bc)):
                 gidx = np.logical_and(qq>=bedges[i], qq<bedges[i+1])
-                dm_vec[i] = np.trapz( dm_rate[gidx], qq[gidx] ) * Exposuretime/3600. 
-                bg_vec[i] = gauss_fit(bc[i], *bp)*cts_per_day
-            clogL, best_ea, best_ga, best_nn, best_model = logL( dm_vec, h, bg_vec, bc )
+                dm_vec[i] = np.trapz( dm_rate[gidx], qq[gidx] ) * Exposuretime/3600. * nugg_frac
+                bg_vec1[i] = gauss_fit(bc[i], *bp)*cts_per_day
+                #bg_vec2[i] = log_gauss_fit(bc[i], *bp[2:])*cts_per_day
+            clogL, best_ea, best_ga, best_nn, best_model = logL( dm_vec, h, bg_vec1, bc )
             bidx = bc > 0.05
             plt.plot( bc[bidx], best_model[bidx]/cts_per_day * 1/binsize, color = lim_plot_cols[csidx], label=r"$\alpha_n$ = %.2e"%alpha)
 
         plt.xlim([0,5])
-        plt.ylim((1, 2e6))
+        plt.ylim((1, 5e6))
         plt.xlabel("Reconstructed impulse amplitude [GeV]")
         plt.ylabel("Counts [GeV$^{-1}$ day$^{-1}$]")
 
-        fig.set_size_inches(5,3)
+        fig.set_size_inches(5,2.75)
         plt.tight_layout(pad=0)
 
         ax = plt.axes([0.5, 0.5, 0.45, 0.45])
@@ -294,8 +315,8 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         #plt.errorbar( rx1, ry1, yerr=re1, fmt='.')
         #plt.errorbar( rx2, ry2, yerr=re2, fmt='.')
         #plt.errorbar( rx3, ry3, yerr=re3, fmt='.')
-        ieff = 0.929 * 0.95
-        ieff_err = ieff * 0.038/np.sqrt(3) ## relative error on cut efficiencies from analyze_calibration
+        ieff = 0.959 * 0.95
+        ieff_err = ieff * np.sqrt(0.012**2 + 0.018**2) ## relative error on cut efficiencies from analyze_calibration
         yvals = ffnerf2(qvals, *bpi)*ieff
         yvals[qvals < analysis_thresh] = 0
         #plt.errorbar( rx2, cdat*ieff, yerr=cerr*ieff, fmt='k.')
@@ -305,7 +326,8 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         yvals_l[qvals < analysis_thresh] = 0
         plt.fill_between( qvals, yvals_l, yvals_u, color='k', alpha = 0.2, edgecolor='none')
         plt.plot(qvals, yvals, 'k', label='com')
-        
+
+        plt.plot([analysis_thresh, analysis_thresh], [0,1], 'k:')
         
         plt.xlim([0, 2.5])
         plt.ylim([0, 1])
@@ -334,12 +356,13 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             dm_rate[np.isnan(dm_rate)] = 0
             
         dm_vec = np.zeros_like(bc)
-        bg_vec = np.zeros_like(bc)
+        bg_vec1 = np.zeros_like(bc)
+        bg_vec2 = np.zeros_like(bc)
         for i in range(len(bc)):
             gidx = np.logical_and(qq>=bedges[i], qq<bedges[i+1])
             dm_vec[i] = np.trapz( dm_rate[gidx], qq[gidx] ) * Exposuretime/3600. 
-            bg_vec[i] = gauss_fit(bc[i], *bp)*cts_per_day
-            #bg_vec[i] = gauss2(bc[i],*popt)
+            bg_vec1[i] = gauss_fit(bc[i], *bp)*cts_per_day
+            #bg_vec2[i] = log_gauss_fit(bc[i], *bp[2:])*cts_per_day
 
         ## this is now done in plot_results.py
         ### eff corr
@@ -353,7 +376,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             plt.semilogy( bc, bg_vec, 'r.')
             plt.show()
             
-        logL_vec[j], best_ea, best_ga, best_nn, best_model = logL( dm_vec, h, bg_vec, bc )
+        logL_vec[j], best_ea, best_ga, best_nn, best_model = logL( dm_vec, h, bg_vec1, bc )
 
         #print("best nn: ", best_nn)
         print("logL, alpha: %.5f\t%.2e"%(logL_vec[j], alpha))
@@ -366,13 +389,13 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         else:
             plt.plot( bc, best_model/cts_per_day, color = cols[j])
         
-        if( logL_vec[j]>best_logL+4):
+        if( logL_vec[j]>best_logL+20):
             print("Found minimum")
             break
         if( j == 0 ):
             best_logL = logL_vec[j]
         if(logL_vec[j]<=best_logL+2):
-            upper_lim_curve = (dm_vec + best_ga*bg_vec)/cts_per_day
+            upper_lim_curve = (dm_vec + best_ga*bg_vec1 )/cts_per_day
 
     plt.legend()
 
@@ -385,7 +408,8 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         pdf.savefig()
 
     plt.figure()
-    plt.errorbar(bc[sidx:], h[sidx:]/cts_per_day - bg_vec[sidx:]/cts_per_day, yerr = sigma[sidx:]/cts_per_day, fmt = "k.", label="no DM")#, color = "#7c1ee9")
+    best_mod = best_ga*bg_vec1
+    plt.errorbar(bc[sidx:], h[sidx:]/cts_per_day - best_mod[sidx:]/cts_per_day, yerr = sigma[sidx:]/cts_per_day, fmt = "k.", label="no DM")#, color = "#7c1ee9")
     plt.errorbar(bc[sidx:], h[sidx:]/cts_per_day - upper_lim_curve[sidx:], yerr = sigma[sidx:]/cts_per_day, fmt = "r.")#, color = "#7c1ee9")
     plt.xlabel('dp [GeV]')
     plt.ylabel('Residual from best fit [cts/bin]')
@@ -438,10 +462,15 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
             cdiff = np.abs(logL_vec[i-1] - logL_vec[i+1])
             if( np.abs(logL_vec[i]-cmean) > 5*cdiff ):
                 logL_vec[i] = cmean
-        
+
+        ## fix error values from failed fits
+        if ( np.abs(logL_vec[i] + 6508645.30457) < 0.3):
+            logL_vec[i] = -6508649.64618
+                
         if logL_vec[i] <= logL_vec[i-1]:
             logL_vec[i] = logL_vec[i-1] ## fill last largest val
-    
+
+            
     ## do hypothesis test relative to no DM:
     midx = 0 #np.argmin(logL_vec)
     minval = logL_vec[midx] #np.min(logL_vec)
@@ -509,11 +538,11 @@ plt.xlabel("Dark matter mass [GeV]")
 plt.ylabel(r"Upper limit on neutron coupling, $\alpha_n$")
 plt.tight_layout(pad=0)
 if( not make_spec_plot):
-    plt.savefig("limit_plots_long/limit_plot_%.2e.pdf"%m_phi)
+    plt.savefig("limit_plots_long/limit_plot_%.2e_nugg_frac_%.2e.pdf"%(m_phi, nugg_frac))
     pdf.savefig()
 
     pdf.close()
-    np.savez("limit_plots_long/limit_data_%.2e.npz"%m_phi, mx_list=mx_list, limits=limits)
+    np.savez("limit_plots_long/limit_data_%.2e_nugg_frac_%.2e.npz"%(m_phi, nugg_frac), mx_list=mx_list, limits=limits)
 
 #plt.show()
 
