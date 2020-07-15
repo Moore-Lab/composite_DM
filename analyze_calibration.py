@@ -22,12 +22,12 @@ mass = 1.03e-12 # kg
 SI_to_GeV = 1.87e18
 tthr = 0.050 ## time threshold in s for which to look for coincidences with calibration pulses (this is big to get random rate)
 repro = True # Set true to reprocess data, false to read from file
-Fernando_path = True
+Fernando_path = False
 calculate_index = False # use true only if change filter or index...
 
 Make_npy_FIG1 = False # use it as false for calibration, true for figure for the paper
 
-calibration_date = "20200619"
+calibration_date = "20200617"
 
 if Fernando_path:
     data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
@@ -812,7 +812,8 @@ sigval = np.std( yvals - cfit(xvals, *cbp) )
 plt.fill_between( xx, cfit(xx, *cbp)-2*sigval, cfit(xx, *cbp)+2*sigval, facecolor='r', alpha=0.1)
 
 cut_eff = np.sum( np.abs(yvals-cfit(xvals,*cbp))<2*sigval )/len(yvals)
-plt.title("Cut efficiency = %.2f"%cut_eff)
+cut_eff_err = np.sqrt(np.sum( np.abs(yvals-cfit(xvals,*cbp))<2*sigval ))/len(yvals)
+plt.title("Cut efficiency = %.3f $\pm$ %.3f "%(cut_eff,cut_eff_err))
 print("Sigma: ", sigval)
 
 
@@ -901,7 +902,7 @@ for i in vlist:
     # plt.plot(rrr, gauss(rrr, *ppo))
     # plt.legend()
 
-
+print(Meanx, sigma2_5y)
 poptchi2, pcovchi2 = curve_fit(func_x2, Meanx[2:], sigma2_5y[2:])
 pin = [np.abs(poptchi2[1]),0,np.abs(poptchi2[0])]
 
@@ -916,7 +917,8 @@ plt.plot(xx, func_x2(xx, *poptchi2))
 
 #pin = [0.2e-18, 0, 2.5e-17]
 #plt.plot(xx, np.polyval(pin, xx), 'r')
-pass_cut = joint_peaks[gpts,6] < func_x2(joint_peaks[gpts,1]/corr_fac_in, *poptchi2)
+gptscut = np.logical_and( gpts, joint_peaks[:,5] > 0)
+pass_cut = joint_peaks[gptscut,6] < func_x2(joint_peaks[gptscut,1]/corr_fac_in, *poptchi2)
 
 ##### inloop chi2 ended
 
@@ -957,7 +959,7 @@ for i in vlist:
     # rrr = np.linspace(0.9*np.min(bc), 1.1*np.max(bc), 100)
     # plt.plot(rrr, gauss(rrr, *ppo))
     # plt.legend()
-
+print(Meanx, sigma2_5y)
 poptchi2, pcovchi2 = curve_fit(func_x2, Meanx[2:], sigma2_5y[2:])
 pout = [np.abs(poptchi2[1]),0,np.abs(poptchi2[0])]
 
@@ -966,7 +968,7 @@ plt.plot( joint_peaks[gpts,3]/corr_fac_out, joint_peaks[gpts,7], 'k.', ms=1)
 #plt.plot(xx, np.polyval(pout, xx), 'r')
 plt.plot( Meanx , sigma2_5y, 'ro')
 plt.plot(xx, func_x2(xx, *poptchi2))
-pass_cut = np.logical_and( pass_cut , joint_peaks[gpts,7] < func_x2(joint_peaks[gpts,3]/corr_fac_in, *poptchi2) )
+pass_cut = np.logical_and( pass_cut , joint_peaks[gptscut,7] < func_x2(joint_peaks[gptscut,3]/corr_fac_out, *poptchi2) )
 
 ##### outloop chi2 ended
 
