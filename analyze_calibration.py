@@ -30,17 +30,17 @@ Make_npy_FIG1 = False # use it as false for calibration, true for figure for the
 calibration_date = "20200617"
 
 if Fernando_path:
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.1V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.4V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/0.8V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/1.6V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/3.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200619/kick/0.1ms/6.4V"]
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.1V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/1.6V",
+                 "//Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/6.4V"]
     if Make_npy_FIG1:
         data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",]
 
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200619/important_npy"
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
@@ -330,8 +330,8 @@ temp = make_template(Fs, f0, gam, 1, mass)
 #tempt = np.hstack((np.zeros(500), temp[0]))
 tempt = temp[0]
 b,a = sp.butter(3, np.array([10., 190.])/(Fs/2), btype='bandpass')
-if Make_npy_FIG1:
-    b,a = sp.butter(3, np.array([65., 115.])/(Fs/2), btype='bandpass')
+#if Make_npy_FIG1:
+#    b,a = sp.butter(3, np.array([2., 600.])/(Fs/2), btype='bandpass')
 b2,a2 = sp.butter(3, (f0/2)/(Fs/2), btype='lowpass')
 tempf = sp.filtfilt(b,a,tempt)
 
@@ -353,6 +353,8 @@ bstop2,astop2 = sp.butter(3, 400./(Fs/2), btype='lowpass')
 tt = np.arange(-1.5/gam, 1.5/gam, 1./Fs)
 tempt = make_template(Fs, f0, gam, 9.6/SI_to_GeV, mass)[0]
 tempt = sp.filtfilt(b,a,tempt)
+if not calculate_index and Make_npy_FIG1:
+    tempt = eleminate_noisy_peaks_nofit_templateonly(tempt, False, precalculated_index_badfreq, lenofmeas)
 
 #chi2pts = np.logical_and( tt >= 0, tt<1.5/gam) 
 #chi2tempf = tempf[chi2pts]*normf/SI_to_GeV
@@ -618,7 +620,7 @@ if(repro):
                 nstack += 1
             stackdati /= nstack
             stackdato /= nstack
-                
+
             plt.figure()
             plt.plot( tvec[:680]-0.02, stackdati, label='in loop'  )
             plt.plot( tvec[:680]-0.02, -stackdato, label='out of loop' )
@@ -627,7 +629,7 @@ if(repro):
             plt.legend(loc="upper right")
 
             if Make_npy_FIG1:
-                np.save("fig1_info_filter_65to115Hz.npy", [stackdati, -stackdato, tvec[:680]-0.02, tempt[120:], tt[120:]+0.5e-3, tvec, indatf, outdatf, mon])
+                np.save("fig1_info_filter.npy", [stackdati, -stackdato, tvec[:680]-0.02, tempt, tt+0.5e-3, tvec, indatf, outdatf, mon])
 
             #newi_psd, newi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
             #newo_psd, newo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))

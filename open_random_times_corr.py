@@ -12,7 +12,7 @@ import matplotlib.colors as colors
 from scipy.special import erf
 from scipy.interpolate import UnivariateSpline
 
-a = np.load("random_times_corr_inloop2.npy", encoding='latin1', allow_pickle=True)
+a = np.load("random_times_corr.npy", encoding='latin1', allow_pickle=True)
 
 def histogram(c, bins):
     h, b = np.histogram(c, bins = bins)
@@ -60,24 +60,28 @@ def getdata(fname, gain_error=1.0):
     return dat, attribs, f, time
 
 def getcorr_time_seconds(a):
-    corr = []
+    corrin = []
+    corrout = []
     T = []
     for i in range(len(a)):
         c = float(a[i][1])
-        corr.append(c)
+        d = float(a[i][2])
+        corrin.append(c)
+        corrout.append(d)
         time = getdata(a[i][0])[-1] + float(a[i][2])/1e4
         T.append(time)
-    return [np.array(corr), np.array(T)]
+    return [np.array(corrin), np.array(corrout), np.array(T)]
 
 def getcorr_timedate(a):
-    corr, T = getcorr_time_seconds(a)
+    corrin, corrout, T = getcorr_time_seconds(a)
     T = labview_time_to_datetime(T)
-    return [corr, T]
+    return [corrin, corrout, T]
 
-def plot_histogram(a, Nblocks):
+def plot_histogram(a, Nblocks, nbins):
     total = len(a)
     N = int(total/Nblocks)
-    newcorr = []
+    newcorrin = []
+    newcorrout = []
     newtime = []
     i = 0
     for k in range(Nblocks):
@@ -86,18 +90,21 @@ def plot_histogram(a, Nblocks):
         except:
             Blocks = a[i*N:-1]
         i = i + 1
-        corr, time = getcorr_time_seconds(Blocks)
-        newcorr.append(corr)
+        corrin, corrout, time = getcorr_time_seconds(Blocks)
+        newcorrin.append(corrin)
+        newcorrout.append(corrout)
         newtime.append(time)
 
-    corr_each = []
-    corr_err_each = []
+    corr_eachin = []
+    corr_err_eachin = []
+    corr_eachout = []
+    corr_err_eachout = []
     mean_time = []
 
     plt.figure()
-    for m in newcorr:
+    for m in newcorrin:
         print ("len", m)
-        h, bc = histogram(m, 15)
+        h, bc = histogram(m, nbins)
         sigma = []
         for j in h:
             if j == 0:
@@ -105,8 +112,24 @@ def plot_histogram(a, Nblocks):
             else:
                 sigma.append(j ** 0.5)
         popt, pcov = curve_fit(gauss, bc, h, sigma=sigma)
-        corr_each.append(np.abs(popt[1]))
-        corr_err_each.append(pcov[1][1]**0.5)
+        corr_eachin.append(np.abs(popt[1]))
+        corr_err_eachin.append(pcov[1][1]**0.5)
+
+        plt.plot(bc, h, ".")
+        energy = np.linspace(2. * np.min(bc), 2. * np.max(bc), 100)
+        plt.plot(energy, gauss(energy, *popt))
+
+    for m in newcorrout:
+        h, bc = histogram(m, nbins)
+        sigma = []
+        for j in h:
+            if j == 0:
+                sigma.append(1.)
+            else:
+                sigma.append(j ** 0.5)
+        popt, pcov = curve_fit(gauss, bc, h, sigma=sigma)
+        corr_eachout.append(np.abs(popt[1]))
+        corr_err_eachout.append(pcov[1][1]**0.5)
 
         plt.plot(bc, h, ".")
         energy = np.linspace(2. * np.min(bc), 2. * np.max(bc), 100)
@@ -120,41 +143,55 @@ def plot_histogram(a, Nblocks):
     mean_time = labview_time_to_datetime(mean_time)
 
     plt.figure()
-    plt.errorbar(mean_time, corr_each, yerr = corr_err_each, fmt = ".")
+    plt.errorbar(mean_time, corr_eachin, yerr = corr_err_eachin, fmt = ".", label = "inloop")
+    plt.errorbar(mean_time, corr_eachout, yerr=corr_err_eachout, fmt=".", label="inloop")
 
     return []
 
 
-plot_histogram(a, 12)
+plot_histogram(a, 24, nbins = 11)
 
-corr, T = getcorr_timedate(a)
+corrin, corrout, T = getcorr_timedate(a)
 
-h, bc = histogram(corr, 50)
+hin, bcin = histogram(corrin, 15)
+hout, bcout = histogram(corrout, 15)
 
-sigma = []
-for j in h:
+sigmain = []
+for j in hin:
     if j == 0:
-        sigma.append(1.)
+        sigmain.append(1.)
     else:
-        sigma.append(j**0.5)
+        sigmain.append(j**0.5)
 
-popt, pcov = curve_fit(gauss, bc, h, sigma = sigma)
+sigmaout = []
+for j in hout:
+    if j == 0:
+        sigmaout.append(1.)
+    else:
+        sigmaout.append(j**0.5)
 
-energy = np.linspace(2.*np.min(bc), 2.*np.max(bc), 100)
+poptin, pcovin = curve_fit(gauss, bcin, hin, sigma = sigmain)
+poptout, pcovout = curve_fit(gauss, bcout, hout, sigma = sigmaout)
 
-plt.figure()
-plt.errorbar(bc, h, yerr = sigma, fmt = ".")
-plt.semilogy(energy, gauss(energy, *popt))
-plt.ylim(0.9, 1.2*np.max(h))
-
-print (popt)
-print (pcov)
-
-print ("sigma total = ", np.abs(popt[1]))
-print ("sigma total err= ", pcov[1][1]**0.5)
+energy = np.linspace(2.*np.min(bcout), 2.*np.max(bcout), 100)
 
 plt.figure()
-plt.plot(T, corr, ".")
+plt.errorbar(bcin, hin, yerr = sigmain, fmt = ".", label = "inloop")
+plt.semilogy(energy, gauss(energy, *poptin))
+plt.errorbar(bcout, hout, yerr = sigmaout, fmt = ".", label = "outloop")
+plt.semilogy(energy, gauss(energy, *poptout))
+plt.ylim(0.9, 1.4*np.max(hin))
+plt.legend()
+
+print ("sigma total inloop= ", np.abs(poptin[1]))
+print ("sigma total err inloop= ", pcovin[1][1]**0.5)
+print ("sigma total outloop= ", np.abs(poptout[1]))
+print ("sigma total err outloop= ", pcovout[1][1]**0.5)
+
+plt.figure()
+plt.plot(T, corrin, ".", label = "inloop")
+plt.plot(T, corrout, ".", label = "outloop")
+plt.legend()
 
 plt.show()
 
