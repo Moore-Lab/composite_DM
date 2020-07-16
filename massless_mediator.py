@@ -20,7 +20,7 @@ nvels = 100
 
 rhoDM = 0.3 # dark matter mass density, GeV/cm^3
 
-N_T = 4.5e15/2 ## number neutrons
+N_T = 3e14 ## number neutrons
 alpha_n = 1e-10
 
 hbarc = 0.2e-13 # GeV cm
