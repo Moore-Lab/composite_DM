@@ -24,10 +24,10 @@ do_resolution_random_times = True
 
 ## don't use the 20200621 folder since the noise is 50% higher
 if(Fernando_path):
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/DM_20200615",
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/DM",
                  "/Volumes/My Passport for Mac/DM measurements/20200617/DM",
                  "/Volumes/My Passport for Mac/DM measurements/20200619/DM",]#"data/DM_20200621"]
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
+    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/important_npy"
     path2 = path1
 else:
     data_list = ["data/DM_20200615","data/DM_20200617","data/DM_20200619",]#"data/DM_20200621"]
@@ -371,7 +371,7 @@ if(repro):
         
         indat = dat[:,0]*vtom_in/ecilist[fi]
         indat -= np.mean(indat)
-        outdat = dat[:,4]*vtom_out/ecolist[fi]
+        outdat = -1.*dat[:,4]*vtom_out/ecolist[fi] ####-
         outdat -= np.mean(outdat)
         accdat = dat[:,5]*1e-7
         accdat -= np.mean(accdat)
@@ -460,7 +460,8 @@ if(repro):
 
             if min_diff < tthr:
                 pdat = indatf[int(ip - len(tempf)/2):int(ip + len(tempf)/2)]
-                ipp = np.abs(incorr[ip])
+                #ipp = np.abs(incorr[ip]) ####-
+                ipp = incorr[ip]
                 ichi2a = np.sum( (pdat - tempf*ipp*normf)**2 )
                 ichi2b = np.sum( (pdat + tempf*ipp*normf)**2 )
                 chisq_in = np.min([ichi2a, ichi2b])
@@ -484,7 +485,8 @@ if(repro):
                     plt.show()
                 
                 op_s = outpeaks[mop]
-                opp = np.abs(outcorr[op_s])
+                #opp = np.abs(outcorr[op_s]) ####-
+                opp = outcorr[op_s]
                 pdat = outdatf[int(op_s - len(tempf)/2):int(op_s + len(tempf)/2)]
                 ochi2a = np.sum( (pdat - tempf*opp*normf)**2 )
                 ochi2b = np.sum( (pdat + tempf*opp*normf)**2 )
@@ -528,6 +530,9 @@ else:
 #sig = 0.2818451718216727 ## from 20200616cal
 sig = joint_peaks[:,12]
 gpts = np.abs( joint_peaks[:,1] - joint_peaks[:,2] ) < 2*sig
+
+joint_peaks[:,1] = np.abs(joint_peaks[:,1])
+joint_peaks[:,2] = np.abs(joint_peaks[:,2])
 
 xe = np.linspace(0,8,100)
 ye = np.linspace(0,4e-17,100)
@@ -755,8 +760,8 @@ binlist = np.linspace(0,10,200)
 
 ## chi2 cut
 xx = np.linspace(0,10, 1000)
-pin = [2.047604324553188e-19, 0, 2.7232408203255857e-17]
-pout = [3.7729975602046407e-19, 0, 5.179557025786547e-17]
+pin = [1.8764494313612876e-19, 0, 3.027762908591984e-17]
+pout = [3.6104373380525065e-19, 0, 5.329548501587917e-17]
 plt.figure()
 plt.plot( joint_peaks[gpts,1], joint_peaks[gpts,3], 'k.', ms=1)
 plt.plot(xx, np.polyval(pin, xx), 'r')

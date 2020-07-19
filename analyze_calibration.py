@@ -30,17 +30,17 @@ Make_npy_FIG1 = False # use it as false for calibration, true for figure for the
 calibration_date = "20200615"
 
 if Fernando_path:
-    data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.1V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.4V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/0.8V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/1.6V",
-                 "//Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",
-                 "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/6.4V"]
+    data_list = ["/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/kick/0.1ms/0.1V",
+                 "/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/kick/0.1ms/0.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/kick/0.1ms/0.4V",
+                 "/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/kick/0.1ms/0.8V",
+                 "/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/kick/0.1ms/1.6V",
+                 "/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/kick/0.1ms/3.2V",
+                 "/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/kick/0.1ms/6.4V"]
     if Make_npy_FIG1:
-        data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/kick/0.1ms/3.2V",]
+        data_list = ["/Volumes/My Passport for Mac/DM measurements/20200615/kick/0.1ms/3.2V",]
 
-    path1 = "/Volumes/My Passport for Mac/DM measurements/20200615/20200615_to/important_npy"
+    path1 = "/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/important_npy"
     path2 = path1
 else:
     data_list = ["data/"+calibration_date+"_to/kick/0.1ms/0.1V",
@@ -331,7 +331,7 @@ temp = make_template(Fs, f0, gam, 1, mass)
 tempt = temp[0]
 b,a = sp.butter(3, np.array([10., 190.])/(Fs/2), btype='bandpass')
 #if Make_npy_FIG1:
-#    b,a = sp.butter(3, np.array([2., 600.])/(Fs/2), btype='bandpass')
+#    b,a = sp.butter(3, np.array([2., 1200.])/(Fs/2), btype='bandpass')
 b2,a2 = sp.butter(3, (f0/2)/(Fs/2), btype='lowpass')
 tempf = sp.filtfilt(b,a,tempt)
 
@@ -353,8 +353,8 @@ bstop2,astop2 = sp.butter(3, 400./(Fs/2), btype='lowpass')
 tt = np.arange(-1.5/gam, 1.5/gam, 1./Fs)
 tempt = make_template(Fs, f0, gam, 9.6/SI_to_GeV, mass)[0]
 tempt = sp.filtfilt(b,a,tempt)
-if not calculate_index and Make_npy_FIG1:
-    tempt = eleminate_noisy_peaks_nofit_templateonly(tempt, False, precalculated_index_badfreq, lenofmeas)
+#if not calculate_index and Make_npy_FIG1:
+#    tempt = eleminate_noisy_peaks_nofit_templateonly(tempt, False, precalculated_index_badfreq, lenofmeas)
 
 #chi2pts = np.logical_and( tt >= 0, tt<1.5/gam) 
 #chi2tempf = tempf[chi2pts]*normf/SI_to_GeV
@@ -429,10 +429,10 @@ if(repro):
         # if(fi == 1):
         #     oldi_psd, oldi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
         #     oldo_psd, oldo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))
-        
+
         indat = dat[:,0]*vtom_in
         indat -= np.mean(indat)
-        outdat = dat[:,4]*vtom_out
+        outdat = -1.*dat[:,4]*vtom_out ## here I am using - to correct for the 180 phase in the outloop
         outdat -= np.mean(outdat)
         accdat = dat[:,5]*1e-7
         accdat -= np.mean(accdat)
@@ -486,7 +486,7 @@ if(repro):
         outpeaks = np.zeros_like(outpeaks_orig)        
 
         ## 2 ms shouldn't be hardcoded -- depends on the period of the oscillation (sphere res frequency)
-        naround = int(Fs * 1./(2.*np.pi*f0))
+        naround = int(Fs * 1./(2.*f0))
         for j,ip in enumerate(inpeaks_orig):
             if( ip<500 or ip>npts-500 ):
                 inpeaks[j] = 0
@@ -519,7 +519,8 @@ if(repro):
             ##### in loop sensor only
             ## find the largest peak within the cal window for each
             if(np.any(np.abs(time_diffs_ip) < tthr)):
-                ip_peakvals = np.abs(incorr[inpeaks][np.abs(time_diffs_ip) < tthr])*SI_to_GeV
+                #ip_peakvals = np.abs(incorr[inpeaks][np.abs(time_diffs_ip) < tthr])*SI_to_GeV
+                ip_peakvals = incorr[inpeaks][np.abs(time_diffs_ip) < tthr] * SI_to_GeV
                 ip_peaktimes = time_diffs_ip[np.abs(time_diffs_ip) < tthr]
                 ipp, ipt = np.max(ip_peakvals), ip_peaktimes[ np.argmax(ip_peakvals) ] #amplitude and time of pulse
 
@@ -540,13 +541,14 @@ if(repro):
                     plt.show()
                     
             else:
-                ipp, ipt, ichi2 = -1, -1, 1e20
+                ipp, ipt, ichi2 = np.nan, np.nan, np.nan
             
             ### done with inloop
 
             ##outloop sensor only
             if(np.any(np.abs(time_diffs_op) < tthr)):
-                op_peakvals = np.abs(outcorr[outpeaks][np.abs(time_diffs_op) < tthr])*SI_to_GeV
+                op_peakvals = outcorr[outpeaks][np.abs(time_diffs_op) < tthr]*SI_to_GeV
+                #op_peakvals = np.abs(outcorr[outpeaks][np.abs(time_diffs_op) < tthr]) * SI_to_GeV
                 op_peaktimes = time_diffs_op[np.abs(time_diffs_op) < tthr]
                 opp, opt = np.max(op_peakvals), op_peaktimes[ np.argmax(op_peakvals) ]
 
@@ -567,7 +569,7 @@ if(repro):
                     plt.show()
                 
             else:
-                opp, opt, ochi2 = -1, -1, 1e20
+                opp, opt, ochi2 = np.nan, np.nan, np.nan
             ### done with outloop
             
             
@@ -597,6 +599,21 @@ if(repro):
             plt.plot(tvec[inpeaks_orig], incorrf[inpeaks_orig], 'ro', mfc='none')
             plt.plot(tvec[inpeaks], np.abs(incorr[inpeaks])*SI_to_GeV, 'ro')
 
+            pstart = np.argwhere( np.logical_and(mon<0.1, np.roll(mon,-1)>=0.1) ).flatten()
+            mon *= np.max(incorrf[inpeaks])/np.max(mon)
+
+            plt.plot( tvec, mon, 'k')
+
+            plt.figure()
+            plt.plot(tvec, (incorr)*SI_to_GeV)
+            plt.plot(tvec, (outcorr)*SI_to_GeV)
+            plt.plot(tvec, outcorrf, 'g')
+            plt.plot(tvec[outpeaks_orig], outcorrf[outpeaks_orig], 'go', mfc='none')
+            plt.plot(tvec[outpeaks], (outcorr[outpeaks])*SI_to_GeV, 'go')
+            plt.plot(tvec, incorrf, 'r')
+            plt.plot(tvec[inpeaks_orig], incorrf[inpeaks_orig], 'ro', mfc='none')
+            plt.plot(tvec[inpeaks], (incorr[inpeaks])*SI_to_GeV, 'ro')
+
             mon = dat[:,3]
             pstart = np.argwhere( np.logical_and(mon<0.1, np.roll(mon,-1)>=0.1) ).flatten()
             mon *= np.max(incorrf[inpeaks])/np.max(mon)
@@ -623,13 +640,13 @@ if(repro):
 
             plt.figure()
             plt.plot( tvec[:680]-0.02, stackdati, label='in loop'  )
-            plt.plot( tvec[:680]-0.02, -stackdato, label='out of loop' )
+            plt.plot( tvec[:680]-0.02, stackdato, label='out of loop' )
             #plt.plot( tt+0.5e-3, tempt, label="Fernando's template" )
             plt.plot( tt[120:]+0.5e-3, tempt[120:]/2, 'k:', label="Template" )
             plt.legend(loc="upper right")
 
             if Make_npy_FIG1:
-                np.save("fig1_info_filter.npy", [stackdati, -stackdato, tvec[:680]-0.02, tempt, tt+0.5e-3, tvec, indatf, outdatf, mon])
+                np.save("fig1_info_filter_2to1201.npy", [stackdati, -stackdato, tvec[:680]-0.02, tempt, tt+0.5e-3, tvec, indatf, outdatf, mon])
 
             #newi_psd, newi_freqs = mlab.psd(dat[:,0], Fs=Fs, NFFT=int(npts/16))
             #newo_psd, newo_freqs = mlab.psd(dat[:,4], Fs=Fs, NFFT=int(npts/16))
@@ -687,8 +704,11 @@ for i,v in enumerate(vlist):
 
     ## get the mean value for each voltage of the kick amplitude (before final calibration)
     tot_cts = len(cdat[:,1])
-    gpts1 = cdat[:,1] > 0
-    gpts2 = cdat[:,3] > 0
+    #gpts1 = cdat[:,1] > 0
+    #gpts2 = cdat[:,3] > 0
+    gpts1 = np.logical_not(np.isnan(cdat[:,1])) ##### -
+    gpts2 = np.logical_not(np.isnan(cdat[:,3])) ##### -
+
     std1 = np.std( cdat[gpts1,1] )/np.sqrt(np.sum(gpts1))
     std2 = np.std( cdat[gpts2,3] )/np.sqrt(np.sum(gpts2))
     res1 = np.std( cdat[gpts1,1] )
@@ -790,7 +810,7 @@ plt.ylabel("Resolution [GeV]")
 
 
 
-cbp, cbc = curve_fit(cfit, joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out, p0=[0.1,1,1])
+cbp, cbc = curve_fit(cfit, joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out, p0=[1,1,1])
 #cbp = [0.1,1,1]
 
 ## calculate the efficiency of the in/out loop amplitude matching criterion
@@ -866,7 +886,7 @@ print("In loop recon eff params: ", bpi)
 #### new chi2 inloop
 def func_x2(x,a,c):
     return np.abs(a) + np.abs(c)*x**2
-gpts = np.logical_and( joint_peaks[:,2]>-0.0, joint_peaks[:,2]<0.0005 )
+gpts = np.logical_and( joint_peaks[:,2]>-0.001, joint_peaks[:,2]<0.0015 )
 
 sigma2_5y = []
 Meanx = []
