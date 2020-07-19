@@ -564,6 +564,7 @@ for acol in accel_cols:
     fpts = ha > 0.2*np.max(ha)
     bap, bacov = curve_fit( gauss_fit, bac[fpts], ha[fpts], sigma=yerrs[fpts], p0=[5e6, mu, sig])
     #bap = [5e6, mu, sig]
+    print("Accel cut values, cut column %d: "%acol, bap)
     bb = np.linspace(bac[0], bac[-1], 1000)
     plt.plot( bb, gauss_fit(bb, *bap), 'r')
     cut_val = bap[1] + 2.5*np.abs(bap[2])
