@@ -13,9 +13,10 @@ import sys
 from scipy.interpolate import UnivariateSpline as us
 
 m_phi = float(sys.argv[1]) #0
+nugg_frac = float(sys.argv[2])
 
 ## fraction of dark matter that is nuggets of this type:
-nugg_frac = 0.1
+
 
 o = open("drdq_interp_grace_%.2e.pkl"%m_phi, 'rb')
 fdict = pickle.load(o)
@@ -140,7 +141,7 @@ cts_per_day = Exposuretime/(24*3600.)
 #spars = [40000/cts_per_day, 0, 0.35] # 80/cts_per_day, 1e-3, 0.2]
 #spars = [40000/cts_per_day, 0.35, 80/cts_per_day, 1e-3, 0.2]
 spars = [ 1.81436062e+05,  2.32744182e-01] #  1.34924320e+03, -8.25155098e-01, 1.90743776e-01]
-fpts = np.logical_and(bc>0.07,bc<1.2)
+fpts = np.logical_and(bc>analysis_thresh,bc<1.2)
 bp, bcov = opt.curve_fit( total_fit, bc[fpts], h[fpts]/cts_per_day, sigma=ysig[fpts]/cts_per_day, p0=spars, maxfev=100000 ) 
 #bp = spars
 print(bp)
@@ -206,7 +207,34 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
     fig=plt.figure()
     if(make_spec_plot):
         ## bin size correction
-        
+
+        binlist = np.linspace(0,10,200)
+        cut_dat = np.load("cut_data.npz")
+        bt_cut = np.logical_not(cut_dat['bad_times'])
+        lab_cut = np.logical_not(cut_dat['lab_cut'])
+        all_lt_cuts = np.logical_not(cut_dat['accel_cut'] + cut_dat['lab_cut'] + cut_dat['bad_times'])  # + cut_dat['chi2_cut'] + cut_dat['amp_match_cut'] + cut_dat['bad_times']
+        all_cuts = np.logical_not(cut_dat['accel_cut'] + cut_dat['lab_cut'] + cut_dat['bad_times']) * cut_dat['chi2_cut'] * cut_dat['amp_match_cut']
+        print("accel cut:", np.sum(all_cuts)/len(all_cuts))
+        h_orig, be = np.histogram( cut_dat['ec'], bins=binlist)
+        h_bt, be = np.histogram( cut_dat['ec'][bt_cut], bins=binlist)
+        h_lab, be = np.histogram( cut_dat['ec'][lab_cut], bins=binlist)
+        h_mid, be = np.histogram( cut_dat['ec'][all_lt_cuts], bins=binlist)
+        h, be = np.histogram( cut_dat['ec'][all_cuts], bins=binlist)
+
+        sigma = np.sqrt(h_orig)
+        plt.step(bc, h_orig/cts_per_day * 1/binsize, linestyle = ':', color='gray', where='mid')
+        #plt.errorbar(bc, h_orig/cts_per_day * 1/binsize, yerr = sigma/cts_per_day * 1/binsize, fmt = ".", color='b')#, color = "#7c1ee9")
+        sigma = np.sqrt(h_bt)
+        h_bt[h_bt==0] = 1e-10
+        plt.step(bc, h_bt/cts_per_day * 1/binsize, linestyle = '-', color='gray', where='mid')
+        sigma = np.sqrt(h_lab)
+        h_lab[h_lab==0] = 1e-10
+        plt.step(bc, h_lab/cts_per_day * 1/binsize, linestyle = '-', color='gray', where='mid')
+        sigma = np.sqrt(h_mid)
+        h_mid[h_mid==0] = 1e-10
+        plt.step(bc, h_mid/cts_per_day * 1/binsize, linestyle = '-', color='gray', where='mid')
+        #plt.errorbar(bc, h_mid/cts_per_day * 1/binsize, yerr = sigma/cts_per_day * 1/binsize, fmt = "r.")#, color = "#7c1ee9")
+        sigma = np.sqrt(h)
         plt.errorbar(bc, h/cts_per_day * 1/binsize, yerr = sigma/cts_per_day * 1/binsize, fmt = "k.")#, color = "#7c1ee9")
         plt.plot(xx, total_fit(xx, *bp) * 1/binsize, 'k:')
     else:
@@ -262,7 +290,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         fig.set_size_inches(5,2.75)
         plt.tight_layout(pad=0)
 
-        ax = plt.axes([0.5, 0.5, 0.45, 0.45])
+        ax = plt.axes([0.5, 0.6, 0.45, 0.35])
         
         ## now the recon efficiency in the inset
         qvals = np.linspace(0.05, 4, 1000)
@@ -299,7 +327,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         ## interpolate the scatter between runs as the error
         stack = np.vstack( (ry1, ry2, ry3) )
         print(np.shape(stack))
-        eff_err = np.std( stack, axis=0 )/np.sqrt(3)
+        eff_err = np.std( stack, axis=0 )/3
         #plt.figure()
         #plt.plot(rx2, eff_err)
         #eei = np.interp(qvals, rx2, eff_err)
@@ -316,7 +344,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         #plt.errorbar( rx2, ry2, yerr=re2, fmt='.')
         #plt.errorbar( rx3, ry3, yerr=re3, fmt='.')
         ieff = 0.959 * 0.95
-        ieff_err = ieff * np.sqrt(0.012**2 + 0.018**2) ## relative error on cut efficiencies from analyze_calibration
+        ieff_err = np.sqrt(0.012**2 + 0.018**2) ## relative error on cut efficiencies from analyze_calibration
         yvals = ffnerf2(qvals, *bpi)*ieff
         yvals[qvals < analysis_thresh] = 0
         #plt.errorbar( rx2, cdat*ieff, yerr=cerr*ieff, fmt='k.')

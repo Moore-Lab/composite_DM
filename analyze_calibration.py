@@ -27,7 +27,7 @@ calculate_index = False # use true only if change filter or index...
 
 Make_npy_FIG1 = False # use it as false for calibration, true for figure for the paper
 
-calibration_date = "20200617"
+calibration_date = "20200619"
 
 if Fernando_path:
     data_list = ["/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/kick/0.1ms/0.1V",
