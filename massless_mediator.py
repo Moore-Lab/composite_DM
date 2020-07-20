@@ -15,7 +15,7 @@ mxlist = np.hstack((np.logspace(np.log10(60),4,36), np.logspace(5, 9, 5)))
 vesc = 1.815e-3 ## galactic escape velocity
 v0 = 7.34e-4 ## v0 parameter from Zurek group paper
 ve = 8.172e-4 ## ve parameter from Zurek group paper
-vmin = 1e-5
+vmin = 1e-6
 nvels = 100
 
 rhoDM = 0.3 # dark matter mass density, GeV/cm^3
@@ -26,8 +26,8 @@ alpha_n = 1e-10
 hbarc = 0.2e-13 # GeV cm
 c = 3e10 # cm/s
 
-sig = 0.14 ## sigma of inloop
-emp_xsec_fac = 4.70 ## factor needed to account for sphere interior from numerical
+sig = 0.17 ## sigma of inloop
+emp_xsec_fac = 1 ##4.70 ## factor needed to account for sphere interior from numerical
                     ## comparison to exact code
 
 def get_color_map( n ):
@@ -120,7 +120,7 @@ bvec_cm_out = np.linspace(5e-4,20e-4,2000)
 bvec_out = bvec_cm_out/hbarc
 
 out_dict = {}
-for mx in mxlist:
+for mx in [5e3,]: #mxlist:
     out_dat = np.zeros((len(aa),len(qq)))
 
     # ## plot q vs b
@@ -148,7 +148,7 @@ for mx in mxlist:
     #plt.figure()
     q_orig = {}
     q_out_orig = {}
-    for aidx, alpha in enumerate(aa):
+    for aidx, alpha in enumerate([1e-7,]): ##aa):
         print("Working on mass, alpha: ", mx, alpha)
         nX = rhoDM/mx
         #vmins = qq/(2*mx)
@@ -168,7 +168,7 @@ for mx in mxlist:
             k = alpha * N_T  ##/(4*np.pi) 4pi is already in the def of alpha
             bmin = 5e-4/hbarc ## 
             qmax = 2*mx*vel/np.sqrt(4*Ecm**2 * bmin**2/k**2 + 1)
-            sigvals[qq > qmax] = 0
+            #sigvals[qq > qmax] = 0
             dRdq_mat[:,vidx] = sigvals * nX * conv_fac 
 
             # if(aidx == 0):
@@ -238,10 +238,11 @@ for mx in mxlist:
             dRdq[j] = np.trapz(dRdq_mat[j,:], vel_list)
             #dRdq_in[j] = np.trapz(dRdq_in_mat[j,:], vel_list)
 
-        if(False):
+        if(True):
             plt.figure()
-            plt.plot( qq, dRdq)
-            plt.plot( qq, dRdq_in)
+            plt.semilogy( qq, dRdq)
+            plt.xlim([0,5])
+            #plt.plot( qq, dRdq_in)
             plt.show()
 
         ## now done in plot_results.py

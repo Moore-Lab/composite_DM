@@ -14,9 +14,7 @@ from scipy.interpolate import UnivariateSpline as us
 
 m_phi = float(sys.argv[1]) #0
 nugg_frac = float(sys.argv[2])
-
 ## fraction of dark matter that is nuggets of this type:
-
 
 o = open("drdq_interp_grace_%.2e.pkl"%m_phi, 'rb')
 fdict = pickle.load(o)
@@ -388,7 +386,7 @@ for mi_idx, mx in enumerate(mx_list): #mx = 1000
         bg_vec2 = np.zeros_like(bc)
         for i in range(len(bc)):
             gidx = np.logical_and(qq>=bedges[i], qq<bedges[i+1])
-            dm_vec[i] = np.trapz( dm_rate[gidx], qq[gidx] ) * Exposuretime/3600. 
+            dm_vec[i] = np.trapz( dm_rate[gidx], qq[gidx] ) * Exposuretime/3600. * nugg_frac
             bg_vec1[i] = gauss_fit(bc[i], *bp)*cts_per_day
             #bg_vec2[i] = log_gauss_fit(bc[i], *bp[2:])*cts_per_day
 

@@ -91,4 +91,8 @@ plt.plot(qvals, cfit(qvals, *ecbp), 'k')
 
 np.save("combined_recon_cal.npy", ecbp)
 
+ecbp = [0.12841173, 0.50727263, 0.42810528]
+plt.plot(qvals, cfit(qvals, *ecbp), 'k:')
+
+
 plt.show()

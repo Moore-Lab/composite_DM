@@ -672,6 +672,7 @@ lab_entry = [ #[dt.datetime(2020,6,8,9,10,0), dt.datetime(2020,6,8,16,47,0), "Fe
               [dt.datetime(2020,6,21,16,0,0), dt.datetime(2020,6,21,17,6,0), "Fernando"],
               ]
 
+
 if(False):
     plt.plot_date(npd[::10], joint_peaks[::10,1], 'k.', ms=2, label='all data')
 #plt.plot_date(npd[bad_times], joint_peaks[bad_times,1], 'r.', ms=2, label='high rate')
@@ -829,7 +830,9 @@ plt.legend()
 final_eff = np.sum(gpts)/np.sum(orig_gpts)
 print("Final cut efficiency: ", final_eff)
 
-hh, be = np.histogram( joint_peaks[gpts,1], bins=binlist)
+#hh, be = np.histogram( joint_peaks[gpts,1], bins=binlist)
+hh, be = np.histogram( e_cal, bins=binlist)
+hh3, be3 = np.histogram( e_cal[np.logical_or(np.logical_not(lab_cut),np.logical_not(accel_cut))], bins=binlist)
 hh2, be2 = np.histogram( e_cal[gpts], bins=binlist)
 
 ## lt cuts only
@@ -859,6 +862,7 @@ print("gauss fit pars: ", bpg)
 
 plt.figure()
 plt.errorbar( bc, hh/s_to_day, yerr=np.sqrt(hh)/s_to_day, fmt='r.')
+plt.errorbar( bc, hh3/s_to_day, yerr=np.sqrt(hh3)/s_to_day, fmt='g.')
 plt.errorbar( bc, hh2/s_to_day, yerr=np.sqrt(hh2)/s_to_day, fmt='k.')
 #plt.errorbar( bc, hh3/s_to_day, yerr=np.sqrt(hh3)/s_to_day, fmt='b.')
 plt.plot(xx, gf2(xx, *bpg), 'k:')
