@@ -86,3 +86,6 @@ for mx in mxlist:
     plt.ylabel("dR/dq [cts/(GeV day)]")
     plt.title("Mass = %.2f"%mx)
     plt.show()
+
+    np.savetxt("drdq_massless_1.2e-8.txt",np.vstack((qq, dRdq, dRdq_in)).T)
+    np.save("drdq_massless_1.2e-8.npy",np.vstack((qq, dRdq, dRdq_in)).T)    

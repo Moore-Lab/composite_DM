@@ -27,7 +27,7 @@ calculate_index = False # use true only if change filter or index...
 
 Make_npy_FIG1 = False # use it as false for calibration, true for figure for the paper
 
-calibration_date = "20200619"
+calibration_date = "20200615"
 
 if Fernando_path:
     data_list = ["/Volumes/My Passport for Mac/DM measurements/" + calibration_date + "/kick/0.1ms/0.1V",
@@ -709,14 +709,6 @@ for i,v in enumerate(vlist):
     gpts1 = np.logical_not(np.isnan(cdat[:,1])) ##### -
     gpts2 = np.logical_not(np.isnan(cdat[:,3])) ##### -
 
-    std1 = np.std( cdat[gpts1,1] )/np.sqrt(np.sum(gpts1))
-    std2 = np.std( cdat[gpts2,3] )/np.sqrt(np.sum(gpts2))
-    res1 = np.std( cdat[gpts1,1] )
-    res2 = np.std( cdat[gpts2,3] )
-    mean_list[i,:] = [ np.median(cdat[gpts1,1]), np.median(cdat[gpts2,3]), std1, std2, res1, res2 ]
-
-    good_cts_in, good_cts_out = np.sum( cdat[:,1] >0), np.sum( cdat[:,3] >0)
-
 
     ## find trigger efficiency and random coincident rate (in loop)
     plt.figure(fig_in.number)
@@ -764,6 +756,16 @@ for i,v in enumerate(vlist):
     min_conf_out,max_conf_out = proportion_confint(int(round(good_cts_out*corr_fac2)),tot_cts,alpha=0.32,method='beta')
 
     eff_list[i,:] = [eff_in, eff_in-min_conf_in, max_conf_in-eff_in, eff_out, eff_out-min_conf_out, max_conf_out-eff_out]
+
+    cdat1 = np.abs(cdat[:, 1])
+    cdat3 = np.abs(cdat[:, 3])
+    std1 = np.std( cdat1[gpts1] )/np.sqrt(np.sum(gpts1))
+    std2 = np.std( cdat3[gpts2] )/np.sqrt(np.sum(gpts2))
+    res1 = np.std( cdat1[gpts1] )
+    res2 = np.std( cdat3[gpts2] )
+    mean_list[i,:] = [ np.median(cdat1[gpts1]), np.median(cdat3[gpts2]), std1, std2, res1, res2 ]
+
+    good_cts_in, good_cts_out = np.sum( cdat[:,1] >0), np.sum( cdat[:,3] >0)
     
 plt.legend()
 #plt.show()
@@ -813,6 +815,8 @@ plt.ylabel("Resolution [GeV]")
 cbp, cbc = curve_fit(cfit, joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out, p0=[1,1,1])
 #cbp = [0.1,1,1]
 
+np.save("in_out_bias_cal.npy", cbp)
+
 ## calculate the efficiency of the in/out loop amplitude matching criterion
 plt.figure()
 #xvals, yvals = joint_peaks[:,1]/corr_fac_in, joint_peaks[:,3]/corr_fac_out
@@ -820,7 +824,7 @@ plt.figure()
 xvals = []
 yvals = []
 for i in range(len(joint_peaks[:,1])):
-    if joint_peaks[:,1][i] > 0. and joint_peaks[:,3][i]  > 0.:
+    if not (np.isnan(joint_peaks[:,1][i]) or np.isnan(joint_peaks[:,3][i]) ):
         xvals.append(joint_peaks[:,1][i] /corr_fac_in)
         yvals.append(joint_peaks[:,3][i] /corr_fac_out)
 xvals = np.array(xvals)
