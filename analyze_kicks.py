@@ -15,9 +15,9 @@ flen = 524288  # file length, samples
 SI_to_GeV = 1.87e18
 sigma_inloop = 0.17
 tthr = 0.005 ## time threshold in s
-repro = True
-remake_coinc_cut = True
-Fernando_path = True
+repro = False
+remake_coinc_cut = False
+Fernando_path = False
 calculate_index = False # use true only if change filter or index... MUST BE FALSE TO ANALYSE DATA!!!
 
 do_resolution_random_times = True
@@ -527,9 +527,16 @@ if(repro):
 else:
     joint_peaks = np.load("joint_peaks.npy")
 
+    
+## now fit center and sigma of blob
+def cfit(x,A,mu,sig):
+    return x + A*(1.+erf((mu-x)/sig))
+cbp = np.load("in_out_bias_cal.npy")
+
 #sig = 0.2818451718216727 ## from 20200616cal
 sig = joint_peaks[:,12]
 gpts = np.abs( joint_peaks[:,1] - joint_peaks[:,2] ) < 2*sig
+amp_match_cut = gpts == True
 
 joint_peaks[:,1] = np.abs(joint_peaks[:,1])
 joint_peaks[:,2] = np.abs(joint_peaks[:,2])
@@ -671,7 +678,9 @@ lab_entry = [ #[dt.datetime(2020,6,8,9,10,0), dt.datetime(2020,6,8,16,47,0), "Fe
               [dt.datetime(2020,6,21,16,0,0), dt.datetime(2020,6,21,17,6,0), "Fernando"],
               ]
 
-plt.plot_date(npd[::10], joint_peaks[::10,1], 'k.', ms=2, label='all data')
+
+if(False):
+    plt.plot_date(npd[::10], joint_peaks[::10,1], 'k.', ms=2, label='all data')
 #plt.plot_date(npd[bad_times], joint_peaks[bad_times,1], 'r.', ms=2, label='high rate')
 yy = plt.ylim()
 for ll in lab_entry:
@@ -799,14 +808,20 @@ e_cal[e_cal < 0] = np.abs(np.random.randn( nneg )*sigma_inloop)
 
 
 
-## make plot of points passing all cuts
-plt.figure()
-plt.plot(joint_peaks[:,0], joint_peaks[:,1], 'k.', ms=3, label='all')
-plt.plot(joint_peaks[gpts,0], joint_peaks[gpts,1], 'c.', ms=3, label='pass in/out coinc')
-plt.plot(joint_peaks[bad_times,0], joint_peaks[bad_times,1], 'b.', ms=3, label='fail 1s coinc')
-plt.plot(joint_peaks[accel_cut,0], joint_peaks[accel_cut,1], 'g.', ms=3, label='fail accel cut')
+if(True):
+    ## make plot of points passing all cuts
+    #plt.figure()
+    #plt.plot(joint_peaks[:,0], joint_peaks[:,1], 'k.', ms=3, label='all')
+    #plt.plot(joint_peaks[gpts,0], joint_peaks[gpts,1], 'c.', ms=3, label='pass in/out coinc')
+    #plt.plot(joint_peaks[bad_times,0], joint_peaks[bad_times,1], 'b.', ms=3, label='fail 1s coinc')
+    #plt.plot(joint_peaks[accel_cut,0], joint_peaks[accel_cut,1], 'g.', ms=3, label='fail accel cut')
 
-
+    chi2 = np.logical_not( lab_cut + accel_cut + bad_times ) * chi2_cut
+    amp = np.logical_not( lab_cut + accel_cut + bad_times ) * amp_match_cut
+    allcuts = np.logical_not( lab_cut + accel_cut + bad_times ) * amp_match_cut * chi2_cut
+    #plt.plot( joint_peaks[chi2, 0], joint_peaks[chi2, 1], 'k.', ms=1 )
+    #plt.plot( joint_peaks[amp, 0], joint_peaks[amp, 1], 'r.', ms=1 )
+    
 
 gpts = np.logical_and(gpts, np.logical_not(lab_cut))
 
@@ -826,8 +841,24 @@ plt.legend()
 final_eff = np.sum(gpts)/np.sum(orig_gpts)
 print("Final cut efficiency: ", final_eff)
 
-hh, be = np.histogram( joint_peaks[gpts,1], bins=binlist)
+print("Checking cuts")
+print("Lab cut: ", np.sum(np.logical_not(lab_cut)))
+print("Lab cut + accel: ", np.sum(np.logical_not(lab_cut + accel_cut)))
+print("Lab cut + accel + coinc: ", np.sum(np.logical_not(lab_cut + accel_cut + bad_times)))
+print("Lab cut + accel + coinc + chi2: ", np.sum(np.logical_not(lab_cut + accel_cut + bad_times)*chi2_cut))
+print("Lab cut + accel + coinc + chi2 + amp: ", np.sum(np.logical_not(lab_cut + accel_cut + bad_times)*chi2_cut*amp_match_cut))
+print("gpts: ", np.sum(gpts))
+
+#hh, be = np.histogram( joint_peaks[gpts,1], bins=binlist)
+hh, be = np.histogram( e_cal, bins=binlist)
+hh3, be3 = np.histogram( e_cal[amp], bins=binlist)
+hh4, be4 = np.histogram( e_cal[chi2], bins=binlist)
+hh5, be5 = np.histogram( e_cal[allcuts], bins=binlist)
 hh2, be2 = np.histogram( e_cal[gpts], bins=binlist)
+
+## lt cuts only
+#ltcuts = np.logical_not( accel_cut + bad_times + lab_cut)
+#hh3, be3 = np.histogram( e_cal[ltcuts], bins=binlist)
 
 bc = be[:-1] + np.diff(be)/2
 bs = be[1]-be[0]
@@ -842,10 +873,22 @@ s_to_day = exposure/(24*3600)
 
 xx = np.linspace(0,2,1000)
 
+gf2 = lambda xx, A,sig: gauss_fit(xx, A, 0, sig)
+
+sig = np.sqrt(hh2)
+sig[sig==0] = 1
+ftpts = bc > 0.15
+bpg, bcg = curve_fit(gf2, bc[ftpts], hh2[ftpts]/s_to_day, sigma=sig[ftpts]/s_to_day, p0=[1e5, 0.25])
+print("gauss fit pars: ", bpg)
+
 plt.figure()
 plt.errorbar( bc, hh/s_to_day, yerr=np.sqrt(hh)/s_to_day, fmt='r.')
+plt.errorbar( bc, hh3/s_to_day, yerr=np.sqrt(hh3)/s_to_day, fmt='g.')
+plt.errorbar( bc, hh4/s_to_day, yerr=np.sqrt(hh4)/s_to_day, fmt='b.')
+plt.errorbar( bc, hh4/s_to_day, yerr=np.sqrt(hh4)/s_to_day, fmt='c.')
 plt.errorbar( bc, hh2/s_to_day, yerr=np.sqrt(hh2)/s_to_day, fmt='k.')
-#plt.plot(xx, total_fit(xx, *bp), 'k')
+#plt.errorbar( bc, hh3/s_to_day, yerr=np.sqrt(hh3)/s_to_day, fmt='b.')
+plt.plot(xx, gf2(xx, *bpg), 'k:')
 plt.yscale('log')
 plt.xlim([0,5])
 plt.ylim((0.1, 3e5))
@@ -855,7 +898,7 @@ plt.ylabel("counts/(%.2f GeV day)"%bs)
 #plt.step(be2[:-1], hh2, where='post', color='r')
 
 ## calculate theory efficiency of 1 s cut
-tot_cts = np.sum(e_cal[gpts] > 1)
+tot_cts = np.sum(e_cal[np.logical_not(lab_cut + accel_cut + bad_times)] > 1)
 print("Total counts above 1 GeV: ", tot_cts)
 
 muc = 2*tot_cts/exposure
@@ -866,6 +909,8 @@ random_eff2 = scipy.stats.poisson.cdf(2, muc)
 print("random pileup eff: ", random_eff0, random_eff1, random_eff2)
 
 np.savez("dm_data.npz", dp=bc, cts = hh2, expo=s_to_day)
+
+np.savez("cut_data.npz", ec=e_cal, accel_cut=accel_cut, lab_cut=lab_cut, bad_times=bad_times, amp_match_cut=amp_match_cut, chi2_cut=chi2_cut)
 
 plt.show()
 

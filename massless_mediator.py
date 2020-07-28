@@ -15,7 +15,7 @@ mxlist = np.hstack((np.logspace(np.log10(60),4,36), np.logspace(5, 9, 5)))
 vesc = 1.815e-3 ## galactic escape velocity
 v0 = 7.34e-4 ## v0 parameter from Zurek group paper
 ve = 8.172e-4 ## ve parameter from Zurek group paper
-vmin = 1e-5
+vmin = 1e-6
 nvels = 100
 
 rhoDM = 0.3 # dark matter mass density, GeV/cm^3
@@ -26,9 +26,7 @@ alpha_n = 1e-10
 hbarc = 0.2e-13 # GeV cm
 c = 3e10 # cm/s
 
-sig = 0.14 ## sigma of inloop
-emp_xsec_fac = 4.70 ## factor needed to account for sphere interior from numerical
-                    ## comparison to exact code
+sig = 0.17 ## sigma of inloop
 
 def get_color_map( n ):
     jet = plt.get_cmap('jet') 
@@ -71,7 +69,7 @@ def nint( u, b, k, R, E):
 
 prefac = alpha_n**2 * N_T**2
 
-qq = np.linspace(0.05, 1e2, 10000)
+qq = np.linspace(0.05, 20, 10000)
 
 plt.figure()
 
@@ -85,7 +83,7 @@ qsp = qq[1]-qq[0]
 qkern = np.arange(-3*sig, 3*sig, qsp)
 gkern = 1./(np.sqrt(2*np.pi)*sig) * np.exp( -qkern**2/(2*sig**2) ) * qsp
 
-conv_fac = hbarc**2 * c * 3600 * emp_xsec_fac**2  ## to give rate in cts/(GeV hr)
+conv_fac = hbarc**2 * c * 3600 * 24 ## to give rate in cts/(GeV day)
 
 ## now calculate the velocity distribution, following https://journals.aps.org/prd/pdf/10.1103/PhysRevD.100.035025
 ## note there is a typo in the sign of the exponential in the above paper
@@ -103,9 +101,12 @@ def f_halo(v):
 
     return f * np.pi * v * v0**2/(N0 * ve)
 
+def f_halo_dan(v):
+    return 4*np.pi*v**2 * np.exp(-v**2/v0**2)/N0
+
 vel_list = np.linspace(vmin, vesc, nvels)
 
-# ## plot the DM velocity distribution
+## plot the DM velocity distribution
 # plt.figure()
 # plt.plot( vel_list, f_halo(vel_list) )
 # plt.title("Velocity distribution, integral = %.2f"%(np.trapz(f_halo(vel_list), vel_list)))
@@ -120,7 +121,7 @@ bvec_cm_out = np.linspace(5e-4,20e-4,2000)
 bvec_out = bvec_cm_out/hbarc
 
 out_dict = {}
-for mx in mxlist:
+for mx in [5e3,]: #mxlist:
     out_dat = np.zeros((len(aa),len(qq)))
 
     # ## plot q vs b
@@ -148,7 +149,7 @@ for mx in mxlist:
     #plt.figure()
     q_orig = {}
     q_out_orig = {}
-    for aidx, alpha in enumerate(aa):
+    for aidx, alpha in enumerate([1.2e-8,]): ##aa):
         print("Working on mass, alpha: ", mx, alpha)
         nX = rhoDM/mx
         #vmins = qq/(2*mx)
@@ -163,14 +164,18 @@ for mx in mxlist:
             p = mx * vel
             
             ## cross section outside the sphere
-            sigvals = (N_T*alpha)**2 * 2*np.pi * 1/qq**3 * 1/vel * f_halo(vel)
+            #sigvals = (N_T*alpha)**2 * 8*np.pi * 1/qq**3 * 1/vel * f_halo(vel)
+            sigvals = np.ones_like(qq) * 1/vel * f_halo_dan(vel)
             Ecm = 0.5*mx*vel**2
             k = alpha * N_T  ##/(4*np.pi) 4pi is already in the def of alpha
             bmin = 5e-4/hbarc ## 
             qmax = 2*mx*vel/np.sqrt(4*Ecm**2 * bmin**2/k**2 + 1)
-            sigvals[qq > qmax] = 0
-            dRdq_mat[:,vidx] = sigvals * nX * conv_fac 
-
+            ## account for vmin at a given q
+            sigvals[qq > 2*mx*vel] = 0
+            dRdq_mat[:,vidx] = sigvals ##* nX * conv_fac 
+            #sigvals[qq > qmax] = 0
+            dRdq_in_mat[:,vidx] = sigvals ##* nX * conv_fac 
+            
             # if(aidx == 0):
             #     ##now inside
             #     cint = integrand(bvec, k, bmin, Ecm)
@@ -233,14 +238,20 @@ for mx in mxlist:
             # #    plt.figure()
             # #    plt.plot( qq, dsigdq_tot*hbarc**2)
             # #    plt.show()
-            
+
+        plt.figure()
+        plt.pcolormesh(qq, vel_list, np.log10(dRdq_mat.T), cmap='jet')
+        
         for j in range( len(qq) ):
             dRdq[j] = np.trapz(dRdq_mat[j,:], vel_list)
-            #dRdq_in[j] = np.trapz(dRdq_in_mat[j,:], vel_list)
-
-        if(False):
+            dRdq_in[j] = np.trapz(dRdq_in_mat[j,:], vel_list)
+        #dRdq_in = dRdq_in_mat[:]
+        #dRdq = dRdq_mat[:]
+        
+        if(True):
             plt.figure()
-            plt.plot( qq, dRdq)
+            plt.semilogy( qq, dRdq)
+            plt.xlim([0,5])
             plt.plot( qq, dRdq_in)
             plt.show()
 
@@ -288,6 +299,6 @@ for mx in mxlist:
     # plt.xlim([0,10])
     # plt.show()
     
-o = open("drdq_interp_grace_%.2e.pkl"%0, 'wb')
-pickle.dump(out_dict, o)
-o.close()
+#o = open("drdq_interp_grace_%.2e.pkl"%0, 'wb')
+#pickle.dump(out_dict, o)
+#o.close()

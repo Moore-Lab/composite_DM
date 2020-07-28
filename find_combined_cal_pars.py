@@ -65,7 +65,7 @@ cdat = (bcaly1 + bcaly2 + bcaly3)/3
 cerr = np.sqrt( bcale1 + bcale2 + bcale3)/3
 
 ## add 0 energy point from analyze_kicks:
-#cdat = np.hstack((0.51, cdat))
+#cdat = np.hstack((0.30, cdat))
 #cerr = np.hstack((0.02, cerr))
 #rx1 = np.hstack((0, rx1))
 
@@ -74,7 +74,13 @@ def cfit(x,A,mu,sig):
 #spars = [0.299019, 0.56726896, 0.93185983]
 spars = [ 0.52721076, -0.04189387, 1.62850192]
 ecbp, ecbc = curve_fit(cfit, rx1, cdat,  sigma=cerr, p0=spars,  maxfev=10000)
-
+## these are the parameters found previously by find_combined_cal_pars.py
+## agree within errors with current data -- however
+## bias correction very sensitive to details of low energy extrapolation
+## hardcode for now, but need to improve event selection for bias calibraion in
+## future analyses
+ecbp = [ 0.79983577, -0.34225474,  0.67874306]
+print(ecbp)
 
 plt.figure()
 plt.errorbar( rx2, bcaly1, yerr=bcale1, fmt='.')
@@ -84,5 +90,9 @@ plt.errorbar( rx1, cdat, yerr=cerr, fmt='k.')
 plt.plot(qvals, cfit(qvals, *ecbp), 'k')
 
 np.save("combined_recon_cal.npy", ecbp)
+
+ecbp = [0.12841173, 0.50727263, 0.42810528]
+plt.plot(qvals, cfit(qvals, *ecbp), 'k:')
+
 
 plt.show()
