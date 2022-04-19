@@ -79,12 +79,23 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, loading_frac=1e-2, livet
 
     return bc, hh    
 
-Q_Ar37 = 813
-t12_Ar37 = 35
-Ar37_seconds = [[0.81, 2.4, 511],
-                [0.082, 2.6, 0],
-                [0.005, 2.8, 0],
-                [0.103, 0, 0]]
-Ar37_seconds = np.array(Ar37_seconds)
+if(len(sys.argv)==1):
+    iso = 'ar_37'
+else:
+    iso = sys.argv[1]
 
-b, h = plot_recon_mass_secondaries(Q_Ar37, t12_Ar37, 37, Ar37_seconds)
+iso_dat = np.loadtxt("data_files/%s.txt"%iso, delimiter=',', skiprows=3)
+
+Q, t12, A = iso_dat[0, :]
+
+seconds = iso_dat[1:,:]
+tot_prob = np.sum(seconds[:,0])
+
+seconds = np.vstack( (seconds, [1-tot_prob, 0, 0]) ) ## add any missing prob as last row
+print(tot_prob, seconds)
+
+b, h = plot_recon_mass_secondaries(Q, t12, A, seconds)
+
+c = np.cumsum(h)/np.sum(h)
+
+np.savez("data_files/%s_pdf.npz"%iso, x=b, pdf=h, cdf=c)
