@@ -2,16 +2,14 @@ import sys
 import numpy as np
 import usphere_utils as uu
 
-def plot_recon_mass_secondaries(Q, t12, A, secondaries, loading_frac=1e-2, livetime=10, num_spheres=1, sphere_radius = 50e-9, eta_xyz=[0.6,0.6,0.6], f0=1e5, Ue4_2 = 1e-4, msterile=750, trigger_prob=0.5, ang_error = 0.01, nbins=100):
+def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100):
     
     ## secondaries is a list of other correlated particles (augers, xrays, gammas, with probabilities)
     ## first column is the probability of that path
     ## second column is the kinetic energy 
     ## third column is the rest mass of the particle
     ## last row is always the probability to be undetected
-    m_sph = 4/3*np.pi*sphere_radius**3 * uu.rho
-    n_nuclei = m_sph * uu.N_A/A * loading_frac * num_spheres
-    n_events = n_nuclei * (1 - 0.5**(livetime/t12) ) 
+
     nmc = int(n_events)
 
     nsecondaries = np.shape(secondaries)[0] #number of secondaries
@@ -20,16 +18,11 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, loading_frac=1e-2, livet
 
     ## keep only the points for which there was a trigger particle
     gpts = second_list < nsecondaries-1
-    gpts = gpts & (np.random.rand(nmc)<trigger_prob) ## only events that the trigger is detected
     second_list = second_list[gpts]
 
     nmc_detect = np.sum(gpts) ## number of detected events
 
     ## first get the truth quantities ######################
-    ## calculate the neutrino mass
-    mnu = 50e-3*np.ones(nmc_detect)
-    sterile_decays = np.random.rand(nmc_detect) < Ue4_2
-    mnu[sterile_decays] = msterile
 
     ## random direction for the nu
     phi_nu = np.random.rand(nmc_detect)*2*np.pi
@@ -53,6 +46,7 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, loading_frac=1e-2, livet
 
     ### end of the truth quantitites ######################
 
+    m_sph = 4/3*np.pi*uu.sphere_radius**3 * uu.rho
     p_res = np.sqrt(uu.hbar * m_sph * 2*np.pi*f0)/uu.kg_m_per_s_to_keV
 
     ### now the reconstructed quantities (noise for each direction -- eventually update with detection effficiencies)
@@ -81,8 +75,14 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, loading_frac=1e-2, livet
 
 if(len(sys.argv)==1):
     iso = 'ar_37'
+    num_reps = 1
+    idx = 0
+    mnu = 0
 else:
     iso = sys.argv[1]
+    mnu = float(sys.argv[2])
+    num_reps = int(sys.argv[3])
+    idx = int(sys.argv[4])
 
 iso_dat = np.loadtxt("data_files/%s.txt"%iso, delimiter=',', skiprows=3)
 
@@ -92,10 +92,17 @@ seconds = iso_dat[1:,:]
 tot_prob = np.sum(seconds[:,0])
 
 seconds = np.vstack( (seconds, [1-tot_prob, 0, 0]) ) ## add any missing prob as last row
-print(tot_prob, seconds)
 
-b, h = plot_recon_mass_secondaries(Q, t12, A, seconds)
+h_tot = 0
+for i in range(num_reps):
+    print("working on iteration %d"%i)
+    b, h = plot_recon_mass_secondaries(Q, t12, A, seconds, mnu, n_events=1e7, **uu.params_dict)
 
-c = np.cumsum(h)/np.sum(h)
+    if(i==0):
+        h_tot = 1.0*h
+    else:   
+        h_tot += h
 
-np.savez("data_files/%s_pdf.npz"%iso, x=b, pdf=h, cdf=c)
+c = np.cumsum(h_tot)/np.sum(h_tot)
+
+np.savez("data_files/%s_mnu_%.1f_pdf_%d.npz"%(iso, mnu, idx), x=b, pdf=h_tot, cdf=c, mnu=mnu)
