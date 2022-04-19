@@ -84,7 +84,7 @@ else:
     num_reps = int(sys.argv[3])
     idx = int(sys.argv[4])
 
-iso_dat = np.loadtxt("data_files/%s.txt"%iso, delimiter=',', skiprows=3)
+iso_dat = np.loadtxt("/home/dcm42/impulse/steriles/data_files/%s.txt"%iso, delimiter=',', skiprows=3)
 
 Q, t12, A = iso_dat[0, :]
 
@@ -105,4 +105,4 @@ for i in range(num_reps):
 
 c = np.cumsum(h_tot)/np.sum(h_tot)
 
-np.savez("data_files/%s_mnu_%.1f_pdf_%d.npz"%(iso, mnu, idx), x=b, pdf=h_tot, cdf=c, mnu=mnu)
+np.savez("/home/dcm42/impulse/steriles/data_files/%s_mnu_%.1f_pdf_%d.npz"%(iso, mnu, idx), x=b, pdf=h_tot, cdf=c, mnu=mnu)

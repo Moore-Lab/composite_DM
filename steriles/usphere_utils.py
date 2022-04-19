@@ -4,7 +4,6 @@ import numpy as np
 
 m_light = 50e-3 # light neutrino mass [eV]
 days_to_s = 24*3600
-t12_Be7 = 53.3 * days_to_s
 sphere_radius = 50e-9 # m
 rho = 2e3 # kg/m^3
 N_A = 6.02e23 * 1e3 # amu per kg
@@ -15,5 +14,5 @@ kg_m_per_s_to_keV = 5.34e-25
 params_dict = { 'eta_xyz': [0.6,0.6,0.6], ## detection efficiency in each coord
                 'f0': 1e5, ## trap resonant frequency
                 'ang_error': 0.01, ## angular error for secondary detection [rad], 
-                'nbins': 100, ## number of bins for PDF
+                'nbins': 250, ## number of bins for PDF
                 }
