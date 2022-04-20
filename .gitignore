@@ -1,4 +1,4 @@
 .vscode/settings.json
 steriles/__pycache__/usphere_utils.cpython-37.pyc
 steriles/data_files/*.npz
-
+dsq*
