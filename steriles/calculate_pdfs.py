@@ -77,12 +77,14 @@ if(len(sys.argv)==1):
     iso = 'ar_37'
     num_reps = 1
     idx = 0
-    mnu = 0
+    mnu_list = "0,"
 else:
     iso = sys.argv[1]
-    mnu = float(sys.argv[2])
+    mnu_list = sys.argv[2]
     num_reps = int(sys.argv[3])
     idx = int(sys.argv[4])
+
+mnu_list = mnu_list.split(",")
 
 iso_dat = np.loadtxt("/home/dcm42/impulse/steriles/data_files/%s.txt"%iso, delimiter=',', skiprows=3)
 
@@ -93,16 +95,18 @@ tot_prob = np.sum(seconds[:,0])
 
 seconds = np.vstack( (seconds, [1-tot_prob, 0, 0]) ) ## add any missing prob as last row
 
-h_tot = 0
-for i in range(num_reps):
-    print("working on iteration %d"%i)
-    b, h = plot_recon_mass_secondaries(Q, t12, A, seconds, mnu, n_events=1e7, **uu.params_dict)
+for cmnu in mnu_list:
+    mnu = float(cmnu)
+    h_tot = 0
+    for i in range(num_reps):
+        print("working on iteration %d for mnu %f"%(i,mnu))
+        b, h = plot_recon_mass_secondaries(Q, t12, A, seconds, mnu, n_events=1e7, **uu.params_dict)
 
-    if(i==0):
-        h_tot = 1.0*h
-    else:   
-        h_tot += h
+        if(i==0):
+            h_tot = 1.0*h
+        else:   
+            h_tot += h
 
-c = np.cumsum(h_tot)/np.sum(h_tot)
+    c = np.cumsum(h_tot)/np.sum(h_tot)
 
-np.savez("/home/dcm42/impulse/steriles/data_files/%s_mnu_%.1f_pdf_%d.npz"%(iso, mnu, idx), x=b, pdf=h_tot, cdf=c, mnu=mnu)
+    np.savez("/home/dcm42/impulse/steriles/data_files/%s_mnu_%.1f_pdf_%d.npz"%(iso, mnu, idx), x=b, pdf=h_tot, cdf=c, mnu=mnu)
