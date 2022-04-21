@@ -1,0 +1,3 @@
+## data file for Be-7
+## Q (keV), T12 (days), A [amu]
+## next lines are secondary particles with probabilities (prob, energy [kev], rest mass [keV])

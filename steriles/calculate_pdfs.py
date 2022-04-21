@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import usphere_utils as uu
 
-def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100):
+def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], ang_error = 0.01, nbins=100):
     
     ## secondaries is a list of other correlated particles (augers, xrays, gammas, with probabilities)
     ## first column is the probability of that path
@@ -47,7 +47,7 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
     ### end of the truth quantitites ######################
 
     m_sph = 4/3*np.pi*uu.sphere_radius**3 * uu.rho
-    p_res = np.sqrt(uu.hbar * m_sph * 2*np.pi*f0)/uu.kg_m_per_s_to_keV
+    p_res = np.sqrt(uu.hbar * m_sph * 2*np.pi*uu.f0)/uu.kg_m_per_s_to_keV
 
     ### now the reconstructed quantities (noise for each direction -- eventually update with detection effficiencies)
     p_sph_x_recon = p_sph_x + eta_xyz[0]**-0.25 * p_res*np.random.randn( nmc_detect )
@@ -67,7 +67,7 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
 
 
     nbins1 = int(nbins)
-    bins = np.linspace(-5*p_res, Q+5*p_res, nbins1)
+    bins = np.linspace(-10*p_res, Q+10*p_res, nbins1)
     hh, be = np.histogram(p_nu_recon, bins=bins)
     bc = be[:-1] + np.diff(be)/2
 

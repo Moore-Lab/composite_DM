@@ -1,0 +1,10 @@
+6	0	c17n02.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:46:55	901.47	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 6
+5	0	c16n07.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:46:56	903.05	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 5
+4	0	c14n12.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:46:57	904.38	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 4
+3	0	c14n11.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:46:59	905.75	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 3
+0	0	c18n10.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:47:00	906.96	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 0
+1	0	c18n11.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:47:00	907.32	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 1
+7	0	c17n07.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:47:05	911.84	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 7
+2	0	c14n06.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:47:14	921.42	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 2
+9	0	c28n10.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:49:24	1050.72	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 9
+8	0	c29n05.grace.hpc.yale.internal	2022-04-21 09:31:53	2022-04-21 09:49:43	1069.94	module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py ar_37 0.0 100 8
