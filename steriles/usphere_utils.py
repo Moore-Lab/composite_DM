@@ -27,6 +27,11 @@ def draw_from_pdf(n, pdf_x, pdf_p):
   rv = np.random.rand(n)
   return np.interp(rv, cdf, pdf_x)
 
+def draw_asimov_from_pdf(n, pdf_x, pdf_p):
+  ## function to draw n values from a PDF
+  n_counts = np.round( n * pdf_p/np.sum(pdf_p) )
+  return pdf_x, n_counts
+
 def fit_fun(N, sig, pdf_sig, pdf_bkg, data):
   model = N*(sig*pdf_sig + pdf_bkg)
   gpts = model > 0
@@ -35,14 +40,17 @@ def fit_fun(N, sig, pdf_sig, pdf_bkg, data):
 def profile_sig_counts(toy_data_x, toy_data_cts, pdf_x, pdf_bkg, pdf_sig):
   ## function to profile over values of the signal counts
 
-  pb = np.interp(toy_data_x, pdf_x, pdf_bkg)
-  ps = np.interp(toy_data_x, pdf_x, pdf_sig)
+  pb = np.interp(toy_data_x, pdf_x, pdf_bkg/np.sum(pdf_bkg))
+  ps = np.interp(toy_data_x, pdf_x, pdf_sig/np.sum(pdf_sig))
 
   ## make a guess for the upper limit of the profile
   xr = np.where( ps>0.05*np.max(ps) )[0]
   tcts = np.sum(toy_data_cts[xr])
   if(tcts == 0): tcts = 10
   ue4_max = 10*np.sqrt(tcts)/np.sum(toy_data_cts)
+
+  print(ps)
+  input()
 
   sig_range = np.linspace(0, ue4_max, 50)
   profile = np.zeros_like(sig_range)
