@@ -78,4 +78,5 @@ for i,m in enumerate(mass_list):
     print("mismatched x vectors")
   
   ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, **uu.params_dict)
-  print("lim for mass ", m, ulim[i])
+
+np.savez("/home/dcm42/impulse/steriles/limits/%s_limit_%.1e_%d_%.1f.npz"%(iso,loading_frac,num_spheres,livetime), m=mass_list, lim=ulim)
