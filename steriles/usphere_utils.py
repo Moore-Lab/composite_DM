@@ -49,9 +49,6 @@ def profile_sig_counts(toy_data_x, toy_data_cts, pdf_x, pdf_bkg, pdf_sig):
   if(tcts == 0): tcts = 10
   ue4_max = 10*np.sqrt(tcts)/np.sum(toy_data_cts)
 
-  print(ps)
-  input()
-
   sig_range = np.linspace(0, ue4_max, 50)
   profile = np.zeros_like(sig_range)
   best_nll = 1e20
