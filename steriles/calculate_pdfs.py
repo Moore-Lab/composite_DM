@@ -77,7 +77,7 @@ if(len(sys.argv)==1):
     iso = 'ar_37'
     num_reps = 1
     idx = 0
-    mnu_list = "0,"
+    mnu_list = "0"
 else:
     iso = sys.argv[1]
     mnu_list = sys.argv[2]
@@ -85,6 +85,7 @@ else:
     idx = int(sys.argv[4])
 
 mnu_list = mnu_list.split(",")
+print(mnu_list)
 
 iso_dat = np.loadtxt("/home/dcm42/impulse/steriles/data_files/%s.txt"%iso, delimiter=',', skiprows=3)
 
