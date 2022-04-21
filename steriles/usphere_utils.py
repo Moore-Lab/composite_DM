@@ -33,7 +33,7 @@ def draw_asimov_from_pdf(n, pdf_x, pdf_p):
   return pdf_x, n_counts
 
 def fit_fun(N, sig, pdf_sig, pdf_bkg, data):
-  model = N*(sig*pdf_sig + pdf_bkg)
+  model = N*(sig*pdf_sig + pdf_bkg)/(1+sig)
   gpts = model > 0
   return np.sum( model[gpts] - data[gpts]*np.log(model[gpts]) ) 
 
@@ -47,9 +47,9 @@ def profile_sig_counts(toy_data_x, toy_data_cts, pdf_x, pdf_bkg, pdf_sig):
   xr = np.where( ps>0.05*np.max(ps) )[0]
   tcts = np.sum(toy_data_cts[xr])
   if(tcts == 0): tcts = 10
-  ue4_max = 10*np.sqrt(tcts)/np.sum(toy_data_cts)
+  ue4_max = 100*np.sqrt(tcts)/np.sum(toy_data_cts)
 
-  sig_range = np.linspace(0, ue4_max, 50)
+  sig_range = np.linspace(0, ue4_max, 500)
   profile = np.zeros_like(sig_range)
   best_nll = 1e20
   for i,sig in enumerate(sig_range):
@@ -59,7 +59,22 @@ def profile_sig_counts(toy_data_x, toy_data_cts, pdf_x, pdf_bkg, pdf_sig):
       if(profile[i] < best_nll):
         best_nll = profile[i]
       
-      if(profile[i] > best_nll + 50):
+      if(profile[i] > best_nll + 500):
+        break
+
+  ## if we didn't get enough points, then retry with more points
+  if(i < 4):
+    sig_range = np.linspace(0, ue4_max, 5000)
+    profile = np.zeros_like(sig_range)
+    best_nll = 1e20
+    for i,sig in enumerate(sig_range):
+      fit = minimize(fit_fun, np.sum(toy_data_cts), args=(sig, ps, pb, toy_data_cts), method='Nelder-Mead')
+      profile[i] = fit.fun
+
+      if(profile[i] < best_nll):
+        best_nll = profile[i]
+      
+      if(profile[i] > best_nll + 500):
         break
 
   sig_range = sig_range[:i]
