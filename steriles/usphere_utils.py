@@ -12,6 +12,10 @@ sphere_mass_amu = 4/3*np.pi*sphere_radius**3 * rho * N_A
 hbar = 1.05e-34 ## SI units
 kg_m_per_s_to_keV = 5.34e-25
 conf_lev = 3.84/2 ## ln(L) for 95% confidence
+me = 511 #electron mass in keV
+e_res = 10 # keV, energy resolution of beta detection
+
+beta_list = ['p_32',]
 
 params_dict = { 'eta_xyz': [0.6,0.6,0.6], ## detection efficiency in each coord
                 'f0': 1e5, ## trap resonant frequency
@@ -36,6 +40,15 @@ def fit_fun(N, sig, pdf_sig, pdf_bkg, data):
   model = N*(sig*pdf_sig + pdf_bkg)/(1+sig)
   gpts = model > 0
   return np.sum( model[gpts] - data[gpts]*np.log(model[gpts]) ) 
+
+def simple_beta(E, Q, ms):
+  #return a simple spectrum of counts vs electron KE (to be updated eventually)
+  ## assumes E in keV
+  ## Q is Q value in keV
+  ## ms is nu mass in keV
+  N = np.sqrt(E**2 + 2*E*me)*(E + me)*np.sqrt((Q-E)**2 - ms**2)*(Q-E)
+  N[E > Q-ms] = 0
+  return N
 
 def profile_sig_counts(toy_data_x, toy_data_cts, pdf_x, pdf_bkg, pdf_sig):
   ## function to profile over values of the signal counts

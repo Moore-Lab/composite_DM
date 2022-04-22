@@ -1,5 +1,8 @@
-## data file for Be-7 (require gamma, so ignore ground state branch)
+## data file for Fe-55
 ## Q (keV), T12 (days), A [amu]
 ## next lines are secondary particles with probabilities (prob, energy [kev], rest mass [keV])
-861.82, 53.22, 7
-0.1044, 477.6, 0
+231.2, 1002, 55
+0.601, 5.19, 511
+0.244, 5.9, 0
+0.029, 6.5, 0
+1.28e-9, 126.0, 0

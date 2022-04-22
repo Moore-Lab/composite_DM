@@ -1,0 +1,11 @@
+## data file for Cr-51
+## Q (keV), T12 (days), A [amu]
+## next lines are secondary particles with probabilities (prob, energy [kev], rest mass [keV])
+752.45, 27.704, 51
+0.664, 4.4, 511
+0.194, 4.9, 0
+0.022, 5.4, 0
+0.099, 320.08, 0
+1.63e-4, 314.6, 511
+1.50e-5, 319.4, 511
+1.97e-6, 320.1, 511
