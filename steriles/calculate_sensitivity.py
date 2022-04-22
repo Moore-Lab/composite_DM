@@ -43,7 +43,7 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, tr
 
 
 
-iso_list = ['ar_37',]
+iso_list = ['v_49','cr_51',"fe_55", 'ge_68', 'se_72']
 ## list of parameters to use (loading frac, num spheres, livetime)
 params_list = [[1e-2, 1, 10], 
                [1e-2, 1000, 365], ]

@@ -1,5 +1,8 @@
-## data file for Be-7 (require gamma, so ignore ground state branch)
+## data file for Ge-68
 ## Q (keV), T12 (days), A [amu]
 ## next lines are secondary particles with probabilities (prob, energy [kev], rest mass [keV])
-861.82, 53.22, 7
-0.1044, 477.6, 0
+106.9, 270.95, 68
+0.418, 8.0, 511
+0.389, 9.2, 0
+0.0484, 10.26, 0
+0.0027, 10.37, 0
