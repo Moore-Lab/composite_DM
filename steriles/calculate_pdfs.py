@@ -89,11 +89,11 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
         ## 2D histo for betas
         nbins1 = int(nbins)
         bins_x = np.linspace(-10*uu.e_res, Q+10*uu.e_res, nbins1)
-        bins_y = np.linspace(-10*uu.e_res-Q, Q+10*uu.e_res, 2*nbins1)
+        bins_y = np.linspace(-10*p_res, Q+10*p_res, nbins1)
         hh, bex, bey = np.histogram2d(energy_second_recon, p_nu_recon, bins=[bins_x, bins_y])
         bcx = bex[:-1] + np.diff(bex)/2
         bcy = bey[:-1] + np.diff(bey)/2
-        bc = {'bcx': bcx, 'bcy': bcy}
+        bc = np.vstack((bcx, bcy)).T
     
     return bc, hh    
 
@@ -101,7 +101,7 @@ if(len(sys.argv)==1):
     iso = 'p_32'
     num_reps = 1
     idx = 0
-    mnu_list = "0"
+    mnu_list = "1000"
 else:
     iso = sys.argv[1]
     mnu_list = sys.argv[2]

@@ -6,7 +6,7 @@ import usphere_utils as uu
 ## using pdfs calculated from calculate_pdfs.py, calculate the sensitivity
 ## for a given isotope as a function of mass
 
-def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, trig_prob = 0.5, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100):
+def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, isEC = True, trig_prob = 0.5, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100):
 
     do_asimov = True ## use asimov dataset for sensitivity
 
@@ -26,7 +26,7 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, tr
       hh, be = np.histogram(bkg_only_cts, bins = np.arange(bkg_pdf_x[0], bkg_pdf_x[-1], p_res/4))
       bc = be[:-1] + np.diff(be)/2
 
-    ue4, prof = uu.profile_sig_counts(bc, hh, bkg_pdf_x, bkg_pdf[:,1], sig_pdf[:,1])
+    ue4, prof = uu.profile_sig_counts(bc, hh, bkg_pdf_x, bkg_pdf[:,1], sig_pdf[:,1], m, Q, isEC=isEC)
 
     ## find the min of the profile
     midx = np.argmin(prof)
@@ -43,7 +43,7 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, tr
 
 
 
-iso_list = ['v_49','cr_51',"fe_55", 'ge_68', 'se_72']
+iso_list = ['be_7',] #'ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
 ## list of parameters to use (loading frac, num spheres, livetime)
 params_list = [[1e-2, 1, 10], 
                [1e-2, 1000, 365], ]
@@ -80,7 +80,7 @@ for iso in iso_list:
       if(np.max(np.abs(bkg_pdf[:,0]-sig_pdf[:,0]))>1e-10):
         print("mismatched x vectors")
       
-      ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, **uu.params_dict)
+      ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, **uu.params_dict)
       print(m, ulim[i])
 
     params = [loading_frac, num_spheres, livetime]

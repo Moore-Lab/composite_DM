@@ -46,15 +46,18 @@ def simple_beta(E, Q, ms):
   ## assumes E in keV
   ## Q is Q value in keV
   ## ms is nu mass in keV
-  N = np.sqrt(E**2 + 2*E*me)*(E + me)*np.sqrt((Q-E)**2 - ms**2)*(Q-E)
-  N[E > Q-ms] = 0
+  N = np.zeros_like(E)
+  gpts = E < Q-ms
+  N[gpts] = np.sqrt(E[gpts]**2 + 2*E[gpts]*me)*(E[gpts] + me)*np.sqrt((Q-E[gpts])**2 - ms**2)*(Q-E[gpts])
   return N
 
-def profile_sig_counts(toy_data_x, toy_data_cts, pdf_x, pdf_bkg, pdf_sig):
+def profile_sig_counts(toy_data_x, toy_data_cts, pdf_x, pdf_bkg, pdf_sig, m, Q, isEC=True):
   ## function to profile over values of the signal counts
 
   pb = np.interp(toy_data_x, pdf_x, pdf_bkg/np.sum(pdf_bkg))
   ps = np.interp(toy_data_x, pdf_x, pdf_sig/np.sum(pdf_sig))
+
+  mass_fac =  np.sqrt(1 - m**2/Q**2)
 
   ## make a guess for the upper limit of the profile
   xr = np.where( ps>0.05*np.max(ps) )[0]
@@ -94,4 +97,7 @@ def profile_sig_counts(toy_data_x, toy_data_cts, pdf_x, pdf_bkg, pdf_sig):
   profile = profile[:i]
   profile -= np.min(profile)
   
+  ## mass_fac corrects for phase space in EC decay
+  ## don't use mass_fac for now and instead implement it only in the plotting
+  ## script for efficiency
   return sig_range, profile
