@@ -31,10 +31,10 @@ def draw_from_pdf(n, pdf_x, pdf_p):
   rv = np.random.rand(n)
   return np.interp(rv, cdf, pdf_x)
 
-def draw_asimov_from_pdf(n, pdf_x, pdf_p):
+def draw_asimov_from_pdf(n, pdf_p):
   ## function to draw n values from a PDF
   n_counts = np.round( n * pdf_p/np.sum(pdf_p) )
-  return pdf_x, n_counts
+  return n_counts
 
 def fit_fun(N, sig, pdf_sig, pdf_bkg, data):
   model = N*(sig*pdf_sig + pdf_bkg)/(1+sig)
@@ -51,13 +51,13 @@ def simple_beta(E, Q, ms):
   N[gpts] = np.sqrt(E[gpts]**2 + 2*E[gpts]*me)*(E[gpts] + me)*np.sqrt((Q-E[gpts])**2 - ms**2)*(Q-E[gpts])
   return N
 
-def profile_sig_counts(toy_data_x, toy_data_cts, pdf_x, pdf_bkg, pdf_sig, m, Q, isEC=True):
+def profile_sig_counts(toy_data_cts, pdf_bkg, pdf_sig):
   ## function to profile over values of the signal counts
 
-  pb = np.interp(toy_data_x, pdf_x, pdf_bkg/np.sum(pdf_bkg))
-  ps = np.interp(toy_data_x, pdf_x, pdf_sig/np.sum(pdf_sig))
+  pb = pdf_bkg/np.sum(pdf_bkg)[:] #np.interp(toy_data_x, pdf_x, pdf_bkg/np.sum(pdf_bkg))
+  ps = pdf_sig/np.sum(pdf_sig)[:] #np.interp(toy_data_x, pdf_x, pdf_sig/np.sum(pdf_sig))
 
-  mass_fac =  np.sqrt(1 - m**2/Q**2)
+  #mass_fac =  np.sqrt(1 - m**2/Q**2)
 
   ## make a guess for the upper limit of the profile
   xr = np.where( ps>0.05*np.max(ps) )[0]

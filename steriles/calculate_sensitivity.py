@@ -22,19 +22,30 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m,
       #print("Working on %d halflives and %f days remaining"%(niters, livetime_remain))
       n_decays = niters * 0.5*n_nuclei + int(trig_prob * n_nuclei * (1 - 0.5**(livetime_remain/t12) ))
 
-    bkg_pdf_x = bkg_pdf[:,0] ## require bkg and sig pdf to have same x values (by construction in calculate pdfs)
+    if(isEC):
+      ## require bkg and sig pdf to have same x values (by construction in calculate pdfs)
+      bkg_pdf_p = bkg_pdf[:,1]
+      sig_pdf_p = sig_pdf[:,1]
 
-    if(do_asimov):
-      bc, hh = uu.draw_asimov_from_pdf( n_decays, bkg_pdf_x, bkg_pdf[:,1] )
+      if(do_asimov):
+        hh = uu.draw_asimov_from_pdf( n_decays, bkg_pdf_p)
+
+      else:
+        bkg_only_cts = uu.draw_from_pdf( n_decays, bkg_pdf_x, bkg_pdf_p )
+        bkg_pdf_x = bkg_pdf[:,0] 
+        p_res = np.sqrt(uu.hbar * m_sph * 2*np.pi*f0)/uu.kg_m_per_s_to_keV
+        hh, be = np.histogram(bkg_only_cts, bins = np.arange(bkg_pdf_x[0], bkg_pdf_x[-1], p_res/4))
+        bc = be[:-1] + np.diff(be)/2
 
     else:
-      bkg_only_cts = uu.draw_from_pdf( n_decays, bkg_pdf_x, bkg_pdf[:,1] )
+      ## for a beta we need to handle the 2D PDFs
+      ## only allow asimov for now
+      bkg_pdf_p = bkg_pdf[:,2:]
+      sig_pdf_p = sig_pdf[:,2:]
 
-      p_res = np.sqrt(uu.hbar * m_sph * 2*np.pi*f0)/uu.kg_m_per_s_to_keV
-      hh, be = np.histogram(bkg_only_cts, bins = np.arange(bkg_pdf_x[0], bkg_pdf_x[-1], p_res/4))
-      bc = be[:-1] + np.diff(be)/2
+      hh = uu.draw_asimov_from_pdf( n_decays,  bkg_pdf_p)
 
-    ue4, prof = uu.profile_sig_counts(bc, hh, bkg_pdf_x, bkg_pdf[:,1], sig_pdf[:,1], m, Q, isEC=isEC)
+    ue4, prof = uu.profile_sig_counts(hh, bkg_pdf_p, sig_pdf_p)
 
     ## find the min of the profile
     midx = np.argmin(prof)
