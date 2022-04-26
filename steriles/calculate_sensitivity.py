@@ -12,7 +12,15 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m,
 
     m_sph = 4/3 * np.pi * uu.sphere_radius**3 * uu.rho
     n_nuclei = m_sph * uu.N_A/A * loading_frac * num_spheres
-    n_decays = int(trig_prob * n_nuclei * (1 - 0.5**(livetime/t12) ))
+
+    if(livetime < t12):
+      n_decays = int(trig_prob * n_nuclei * (1 - 0.5**(livetime/t12) ))
+    else:
+      ## assume the sphere is reloaded once per half-life
+      niters = np.floor(livetime/t12)
+      livetime_remain = livetime % t12
+      #print("Working on %d halflives and %f days remaining"%(niters, livetime_remain))
+      n_decays = niters * 0.5*n_nuclei + int(trig_prob * n_nuclei * (1 - 0.5**(livetime_remain/t12) ))
 
     bkg_pdf_x = bkg_pdf[:,0] ## require bkg and sig pdf to have same x values (by construction in calculate pdfs)
 
@@ -43,7 +51,7 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m,
 
 
 
-iso_list = ['be_7',] #'ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
+iso_list = ['be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
 ## list of parameters to use (loading frac, num spheres, livetime)
 params_list = [[1e-2, 1, 10], 
                [1e-2, 1000, 365], ]
