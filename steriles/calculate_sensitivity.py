@@ -6,27 +6,46 @@ import usphere_utils as uu
 ## using pdfs calculated from calculate_pdfs.py, calculate the sensitivity
 ## for a given isotope as a function of mass
 
-def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, trig_prob = 0.5, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100):
+def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, isEC = True, trig_prob = 0.5, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100):
 
     do_asimov = True ## use asimov dataset for sensitivity
 
     m_sph = 4/3 * np.pi * uu.sphere_radius**3 * uu.rho
     n_nuclei = m_sph * uu.N_A/A * loading_frac * num_spheres
-    n_decays = int(trig_prob * n_nuclei * (1 - 0.5**(livetime/t12) ))
 
-    bkg_pdf_x = bkg_pdf[:,0] ## require bkg and sig pdf to have same x values (by construction in calculate pdfs)
+    if(livetime < t12):
+      n_decays = int(trig_prob * n_nuclei * (1 - 0.5**(livetime/t12) ))
+    else:
+      ## assume the sphere is reloaded once per half-life
+      niters = np.floor(livetime/t12)
+      livetime_remain = livetime % t12
+      #print("Working on %d halflives and %f days remaining"%(niters, livetime_remain))
+      n_decays = niters * 0.5*n_nuclei + int(trig_prob * n_nuclei * (1 - 0.5**(livetime_remain/t12) ))
 
-    if(do_asimov):
-      bc, hh = uu.draw_asimov_from_pdf( n_decays, bkg_pdf_x, bkg_pdf[:,1] )
+    if(isEC):
+      ## require bkg and sig pdf to have same x values (by construction in calculate pdfs)
+      bkg_pdf_p = bkg_pdf[:,1]
+      sig_pdf_p = sig_pdf[:,1]
+
+      if(do_asimov):
+        hh = uu.draw_asimov_from_pdf( n_decays, bkg_pdf_p)
+
+      else:
+        bkg_only_cts = uu.draw_from_pdf( n_decays, bkg_pdf_x, bkg_pdf_p )
+        bkg_pdf_x = bkg_pdf[:,0] 
+        p_res = np.sqrt(uu.hbar * m_sph * 2*np.pi*f0)/uu.kg_m_per_s_to_keV
+        hh, be = np.histogram(bkg_only_cts, bins = np.arange(bkg_pdf_x[0], bkg_pdf_x[-1], p_res/4))
+        bc = be[:-1] + np.diff(be)/2
 
     else:
-      bkg_only_cts = uu.draw_from_pdf( n_decays, bkg_pdf_x, bkg_pdf[:,1] )
+      ## for a beta we need to handle the 2D PDFs
+      ## only allow asimov for now
+      bkg_pdf_p = bkg_pdf[:,2:]
+      sig_pdf_p = sig_pdf[:,2:]
 
-      p_res = np.sqrt(uu.hbar * m_sph * 2*np.pi*f0)/uu.kg_m_per_s_to_keV
-      hh, be = np.histogram(bkg_only_cts, bins = np.arange(bkg_pdf_x[0], bkg_pdf_x[-1], p_res/4))
-      bc = be[:-1] + np.diff(be)/2
+      hh = uu.draw_asimov_from_pdf( n_decays,  bkg_pdf_p)
 
-    ue4, prof = uu.profile_sig_counts(bc, hh, bkg_pdf_x, bkg_pdf[:,1], sig_pdf[:,1])
+    ue4, prof = uu.profile_sig_counts(hh, bkg_pdf_p, sig_pdf_p)
 
     ## find the min of the profile
     midx = np.argmin(prof)
@@ -43,7 +62,7 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, tr
 
 
 
-iso_list = ['v_49','cr_51',"fe_55", 'ge_68', 'se_72']
+iso_list = ['be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
 ## list of parameters to use (loading frac, num spheres, livetime)
 params_list = [[1e-2, 1, 10], 
                [1e-2, 1000, 365], ]
@@ -80,7 +99,7 @@ for iso in iso_list:
       if(np.max(np.abs(bkg_pdf[:,0]-sig_pdf[:,0]))>1e-10):
         print("mismatched x vectors")
       
-      ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, **uu.params_dict)
+      ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, **uu.params_dict)
       print(m, ulim[i])
 
     params = [loading_frac, num_spheres, livetime]
