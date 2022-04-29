@@ -45,6 +45,12 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m,
 
       hh = uu.draw_asimov_from_pdf( n_decays,  bkg_pdf_p)
 
+    #plt.figure()
+    #plt.pcolormesh(hh)
+    #plt.savefig('dummy.png')
+    #plt.close()
+    #input('plotted')
+
     ue4, prof = uu.profile_sig_counts(hh, bkg_pdf_p, sig_pdf_p)
 
     ## find the min of the profile
@@ -62,12 +68,14 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m,
 
 
 
-iso_list = ['be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
+iso_list = ['p_32', ] #'be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
 ## list of parameters to use (loading frac, num spheres, livetime)
 params_list = [[1e-2, 1, 10], 
                [1e-2, 1000, 365], ]
 
 for iso in iso_list:
+
+  isEC = not iso in uu.beta_list
 
   for p in params_list:
 
@@ -91,15 +99,16 @@ for iso in iso_list:
 
     ulim = np.ones_like(mass_list)*1e6
     bkg_pdf = pdfs['0.0']
+
     for i,m in enumerate(mass_list):
 
-      #if( livetime < 300 or m < 340): continue
+      #if( livetime < 300 or m < 500): continue
 
       sig_pdf = pdfs['%.1f'%m]
       if(np.max(np.abs(bkg_pdf[:,0]-sig_pdf[:,0]))>1e-10):
         print("mismatched x vectors")
-      
-      ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, **uu.params_dict)
+
+      ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, isEC=isEC, **uu.params_dict)
       print(m, ulim[i])
 
     params = [loading_frac, num_spheres, livetime]
