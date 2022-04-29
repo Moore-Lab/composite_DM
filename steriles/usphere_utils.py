@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 
 ## various config parameters for impulse calculation
@@ -54,8 +55,8 @@ def simple_beta(E, Q, ms):
 def profile_sig_counts(toy_data_cts, pdf_bkg, pdf_sig):
   ## function to profile over values of the signal counts
 
-  pb = pdf_bkg/np.sum(pdf_bkg)[:] #np.interp(toy_data_x, pdf_x, pdf_bkg/np.sum(pdf_bkg))
-  ps = pdf_sig/np.sum(pdf_sig)[:] #np.interp(toy_data_x, pdf_x, pdf_sig/np.sum(pdf_sig))
+  pb = pdf_bkg[:]/np.sum(pdf_bkg) #np.interp(toy_data_x, pdf_x, pdf_bkg/np.sum(pdf_bkg))
+  ps = pdf_sig[:]/np.sum(pdf_sig) #np.interp(toy_data_x, pdf_x, pdf_sig/np.sum(pdf_sig))
 
   #mass_fac =  np.sqrt(1 - m**2/Q**2)
 
@@ -80,7 +81,7 @@ def profile_sig_counts(toy_data_cts, pdf_bkg, pdf_sig):
 
   ## if we didn't get enough points, then retry with more points
   if(i < 4):
-    sig_range = np.linspace(0, ue4_max, 5000)
+    sig_range = np.linspace(0, ue4_max, 50000)
     profile = np.zeros_like(sig_range)
     best_nll = 1e20
     for i,sig in enumerate(sig_range):
@@ -92,6 +93,8 @@ def profile_sig_counts(toy_data_cts, pdf_bkg, pdf_sig):
       
       if(profile[i] > best_nll + 500):
         break
+
+  #print(profile - np.min(profile))
 
   sig_range = sig_range[:i]
   profile = profile[:i]
