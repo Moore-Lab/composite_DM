@@ -20,7 +20,7 @@ for f in file_list:
 
 for iso in iso_list:
 
-    #if(iso != 'p_32'): continue
+    if(iso != 's_35'): continue
 
     curr_dict = {} ## dictionary to hold pdfs
 
