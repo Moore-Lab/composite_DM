@@ -32,14 +32,30 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
     phi_second = np.random.rand(nmc_detect)*2*np.pi
     theta_second = np.arccos(2*np.random.rand(nmc_detect) - 1)
 
+    ## random direction for the gamma
+    phi_gamma = np.random.rand(nmc_detect)*2*np.pi
+    theta_gamma = np.arccos(2*np.random.rand(nmc_detect) - 1)
+
     ## kinetic energy of the secondary
+    
+    gamma_eng = np.zeros_like(second_list) ## extra gamma decay (only relevant for betas)
+    
     if(isEC):
         T_sec = secondaries[second_list,1]
     else:
-        ## beta spectrum
-        elec_e_vals = np.linspace(0, Q, int(1e3)) # electron kinetic energies to evaluate beta spectrum at
-        beta_spec_e = uu.simple_beta(elec_e_vals, Q, mnu)
-        T_sec = uu.draw_from_pdf(nmc_detect, elec_e_vals, beta_spec_e)
+        ## beta spectrum 
+
+        ## if there are decays to excited states, loop over the possible spectra:
+        T_sec = np.zeros(nmc_detect)
+        for ns in nsecondaries:
+            elec_e_vals = np.linspace(0, Q, int(1e3)) # electron kinetic energies to evaluate beta spectrum at
+            curr_Q = secondaries[ns,1] ## end point for this branch of the beta
+            beta_spec_e = uu.simple_beta(elec_e_vals, curr_Q, mnu)
+
+            current_pts = second_list == ns
+            curr_num = np.sum(current_pts)
+            T_sec[current_pts] = uu.draw_from_pdf(curr_num, elec_e_vals, beta_spec_e)
+            gamma_eng[current_pts] = Q - curr_Q
     
     m_sec = secondaries[second_list,2]
     p_sec = np.sqrt( (T_sec + m_sec)**2 - m_sec**2 ) ## momentum of the secondary
@@ -47,9 +63,10 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
     ## neutrino momentum
     p_nu_true = np.sqrt((Q-T_sec)**2 - mnu**2)
 
-    p_sph_x = -( p_nu_true*np.cos(phi_nu)*np.sin(theta_nu) + p_sec*np.cos(phi_second)*np.sin(theta_second) )
-    p_sph_y = -( p_nu_true*np.sin(phi_nu)*np.sin(theta_nu) + p_sec*np.sin(phi_second)*np.sin(theta_second) )
-    p_sph_z = -( p_nu_true*np.cos(theta_nu) + p_sec*np.cos(theta_second) )
+    ## if a gamma was emitted, add it here to the true momentum but assume we don't collect it to correct later
+    p_sph_x = -( p_nu_true*np.cos(phi_nu)*np.sin(theta_nu) + p_sec*np.cos(phi_second)*np.sin(theta_second) + gamma_eng*np.cos(phi_gamma)*np.sin(theta_gamma) )
+    p_sph_y = -( p_nu_true*np.sin(phi_nu)*np.sin(theta_nu) + p_sec*np.sin(phi_second)*np.sin(theta_second) + gamma_eng*np.sin(phi_gamma)*np.sin(theta_gamma) )
+    p_sph_z = -( p_nu_true*np.cos(theta_nu) + p_sec*np.cos(theta_second) + gamma_eng*np.cos(theta_gamma) )
 
     ### end of the truth quantitites ######################
 
@@ -98,10 +115,10 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
     return bc, hh    
 
 if(len(sys.argv)==1):
-    iso = 'p_32'
+    iso = 'y_90'
     num_reps = 1
     idx = 0
-    mnu_list = "1000"
+    mnu_list = "0"
 else:
     iso = sys.argv[1]
     mnu_list = sys.argv[2]
