@@ -3,3 +3,5 @@ steriles/__pycache__/usphere_utils.cpython-37.pyc
 steriles/data_files/*.npz
 steriles/pdfs/*.npz
 dsq*
+~$neut_xs.xlsx
+neut_xs.xlsx
