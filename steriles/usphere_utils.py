@@ -16,7 +16,7 @@ conf_lev = 3.84/2 ## ln(L) for 95% confidence
 me = 511 #electron mass in keV
 e_res = 10 # keV, energy resolution of beta detection
 
-beta_list = ['p_32','s_35', 'y_90']
+beta_list = ['h_3','p_32','s_35', 'y_90']
 
 params_dict = { 'eta_xyz': [0.6,0.6,0.6], ## detection efficiency in each coord
                 'f0': 1e5, ## trap resonant frequency
