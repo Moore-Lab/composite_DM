@@ -24,6 +24,10 @@ params_dict = { 'eta_xyz': [0.6,0.6,0.6], ## detection efficiency in each coord
                 'nbins': 250, ## number of bins for PDF
                 }
 
+stopping_dat = np.load('elec_stopping_power/elec_stopping_sio2.npz')
+
+def elec_stopping_power(kinetic_eng):
+    return np.interp(kinetic_eng, stopping_dat['e'], stopping_dat['s']) ## in eV/nm
 
 def draw_from_pdf(n, pdf_x, pdf_p):
   ## function to draw n values from a PDF
