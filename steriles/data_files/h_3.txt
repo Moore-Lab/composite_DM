@@ -1,0 +1,5 @@
+## data file for H-3
+## Q (keV), T12 (days), A [amu]
+## next lines are secondary particles with probabilities (prob, energy [kev], rest mass [keV])
+18.591, 4499.8, 3
+1.0, 18.591, 511
