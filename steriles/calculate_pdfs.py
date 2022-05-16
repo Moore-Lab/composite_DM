@@ -3,7 +3,7 @@ import numpy as np
 import usphere_utils as uu
 import matplotlib.pyplot as plt
 
-def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100, isEC=True):
+def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100, isEC=True, sphere_rad=uu.sphere_radius):
     
     ## secondaries is a list of other correlated particles (augers, xrays, gammas, with probabilities)
     ## first column is the probability of that path
@@ -67,7 +67,7 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
     T_sec_loss = np.zeros_like(T_sec)
     elec_idxs = secondaries[second_list,2] == 511
     ## random transit distance through the sphere for the electron
-    rand_transit_dist = uu.get_random_sphere_distance( np.sum(elec_idxs), uu.sphere_radius )
+    rand_transit_dist = uu.get_random_sphere_distance( np.sum(elec_idxs), sphere_rad )
     stopping_power = uu.elec_stopping_power(T_sec[elec_idxs]) ## in eV/nm
     ## instead of simulating the track in the sphere itself, just make a straight line
     ## estimate, assuming change of stopping along track is negligible
@@ -90,7 +90,7 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
 
     ### end of the truth quantitites ######################
 
-    m_sph = 4/3*np.pi*uu.sphere_radius**3 * uu.rho
+    m_sph = 4/3*np.pi*sphere_rad**3 * uu.rho
     p_res = np.sqrt(uu.hbar * m_sph * 2*np.pi*f0)/uu.kg_m_per_s_to_keV
 
     ### now the reconstructed quantities (noise for each direction -- eventually update with detection effficiencies)
@@ -141,11 +141,15 @@ if(len(sys.argv)==1):
     num_reps = 1
     idx = 0
     mnu_list = "0"
+    sphere_rad = 50
+    f0 = 1e5
 else:
     iso = sys.argv[1]
     mnu_list = sys.argv[2]
     num_reps = int(sys.argv[3])
     idx = int(sys.argv[4])
+    sphere_rad = float(sys.argv[5])
+    f0 = float(sys.argv[6])
 
 mnu_list = mnu_list.split(",")
 print(mnu_list)
@@ -169,7 +173,10 @@ for cmnu in mnu_list:
     h_tot = 0
     for i in range(num_reps):
         print("working on iteration %d for mnu %f"%(i,mnu))
-        b, h = plot_recon_mass_secondaries(Q, t12, A, seconds, mnu, n_events=1e7, isEC=isEC, **uu.params_dict)
+        curr_params = uu.params_dict
+        curr_params['f0'] = f0
+        curr_params['sphere_rad'] = sphere_rad
+        b, h = plot_recon_mass_secondaries(Q, t12, A, seconds, mnu, n_events=1e7, isEC=isEC, **curr_params)
 
         if(i==0):
             h_tot = 1.0*h
@@ -178,4 +185,4 @@ for cmnu in mnu_list:
 
     c = np.cumsum(h_tot)/np.sum(h_tot)
 
-    np.savez("/home/dcm42/impulse/steriles/data_files/%s_mnu_%.1f_pdf_%d.npz"%(iso, mnu, idx), x=b, pdf=h_tot, cdf=c, mnu=mnu)
+    np.savez("/home/dcm42/impulse/steriles/data_files/%s_mnu_%.1f_rad_%.1f_f0_%.1e_pdf_%d.npz"%(iso, mnu, sphere_rad, f0, idx), x=b, pdf=h_tot, cdf=c, mnu=mnu)

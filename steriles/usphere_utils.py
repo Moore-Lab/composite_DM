@@ -6,14 +6,13 @@ from scipy.optimize import minimize
 
 m_light = 50e-3 # light neutrino mass [eV]
 days_to_s = 24*3600
-sphere_radius = 50e-9 # m
 rho = 2e3 # kg/m^3
 N_A = 6.02e23 * 1e3 # amu per kg
-sphere_mass_amu = 4/3*np.pi*sphere_radius**3 * rho * N_A
 hbar = 1.05e-34 ## SI units
 kg_m_per_s_to_keV = 5.34e-25
 conf_lev = 3.84/2 ## ln(L) for 95% confidence
 me = 511 #electron mass in keV
+f0 = 1e5 #Hz, default trap freq
 e_res = 10 # keV, energy resolution of beta detection
 eV_to_keV = 1e-3
 m_to_nm = 1e9
@@ -24,7 +23,8 @@ params_dict = { 'eta_xyz': [0.6,0.6,0.6], ## detection efficiency in each coord
                 'f0': 1e5, ## trap resonant frequency
                 'ang_error': 0.01, ## angular error for secondary detection [rad], 
                 'nbins': 250, ## number of bins for PDF
-                }
+                'sphere_rad': 50e-9 ## sphere radius in m
+              }
 
 stopping_dat = np.load('elec_stopping_power/elec_stopping_sio2.npz')
 
