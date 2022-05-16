@@ -15,6 +15,8 @@ kg_m_per_s_to_keV = 5.34e-25
 conf_lev = 3.84/2 ## ln(L) for 95% confidence
 me = 511 #electron mass in keV
 e_res = 10 # keV, energy resolution of beta detection
+eV_to_keV = 1e-3
+m_to_nm = 1e9
 
 beta_list = ['h_3','p_32','s_35', 'y_90']
 
@@ -25,6 +27,21 @@ params_dict = { 'eta_xyz': [0.6,0.6,0.6], ## detection efficiency in each coord
                 }
 
 stopping_dat = np.load('elec_stopping_power/elec_stopping_sio2.npz')
+
+def get_random_sphere_distance(n,R):
+  r = (np.random.rand(n))**(1/3)
+  phi = np.random.rand(n)*2*np.pi
+  theta = np.arccos(2*np.random.rand(n) - 1)
+
+  phi_surf = np.random.rand(n)*2*np.pi
+  theta_surf = np.arccos(2*np.random.rand(n) - 1)
+
+  x = r*np.cos(phi)*np.sin(theta) - np.cos(phi_surf)*np.sin(theta_surf)
+  y = r*np.sin(phi)*np.sin(theta) - np.sin(phi_surf)*np.sin(theta_surf)
+  z = r*np.cos(theta) - np.cos(theta_surf)
+
+  return R*np.sqrt( x**2 + y**2 + z**2 )
+
 
 def elec_stopping_power(kinetic_eng):
     return np.interp(kinetic_eng, stopping_dat['e'], stopping_dat['s']) ## in eV/nm

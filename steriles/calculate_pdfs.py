@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import usphere_utils as uu
+import matplotlib.pyplot as plt
 
 def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100, isEC=True):
     
@@ -39,7 +40,8 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
     ## kinetic energy of the secondary
     
     gamma_eng = np.zeros_like(second_list) ## extra gamma decay (only relevant for betas)
-    
+    Q_vec = Q*np.ones_like(second_list) ## q value (if excited state decay, enpoint of beta only)
+
     if(isEC):
         T_sec = secondaries[second_list,1]
     else:
@@ -59,12 +61,27 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
             else:
                 T_sec[current_pts] = uu.draw_from_pdf(curr_num, elec_e_vals, beta_spec_e)
             gamma_eng[current_pts] = Q - curr_Q
+            Q_vec[current_pts] = curr_Q
+
+    ## now model energy loss through the sphere, if an electron
+    T_sec_loss = np.zeros_like(T_sec)
+    elec_idxs = secondaries[second_list,2] == 511
+    ## random transit distance through the sphere for the electron
+    rand_transit_dist = uu.get_random_sphere_distance( np.sum(elec_idxs), uu.sphere_radius )
+    stopping_power = uu.elec_stopping_power(T_sec[elec_idxs]) ## in eV/nm
+    ## instead of simulating the track in the sphere itself, just make a straight line
+    ## estimate, assuming change of stopping along track is negligible
+    T_sec_loss[elec_idxs] = stopping_power*rand_transit_dist * uu.eV_to_keV * uu.m_to_nm  ## in keV
+
+    m_sec = secondaries[second_list,2] 
     
-    m_sec = secondaries[second_list,2]
-    p_sec = np.sqrt( (T_sec + m_sec)**2 - m_sec**2 ) ## momentum of the secondary
+    ## subtract of the energy lost in the sphere before calculating the total momentum leaving
+    T_sec_after_loss = T_sec - T_sec_loss
+    T_sec_after_loss[T_sec_after_loss<0] = 0 ## can't lose more than the total
+    p_sec = np.sqrt( (T_sec_after_loss + m_sec)**2 - m_sec**2 ) ## momentum of the secondary
 
     ## neutrino momentum
-    p_nu_true = np.sqrt((Q-T_sec)**2 - mnu**2)
+    p_nu_true = np.sqrt((Q_vec-T_sec)**2 - mnu**2) ## this is before the loss
 
     ## if a gamma was emitted, add it here to the true momentum but assume we don't collect it to correct later
     p_sph_x = -( p_nu_true*np.cos(phi_nu)*np.sin(theta_nu) + p_sec*np.cos(phi_second)*np.sin(theta_second) + gamma_eng*np.cos(phi_gamma)*np.sin(theta_gamma) )
@@ -84,11 +101,12 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
     phi_second_recon = phi_second + ang_error*np.random.randn( nmc_detect )
     theta_second_recon = theta_second + ang_error*np.random.randn( nmc_detect )
     
-    energy_second_recon = T_sec  ## assume we know the energy better than we can reconstruct it
-
-    ## if it's a beta, need to include error on kinetic energy
+    energy_second_recon = T_sec  ## for EC, assume we know the energy better than we can reconstruct it
+    
+    ## if it's a beta, need to include error on kinetic energy, and the measured energy of the
+    ## particle that leaves the sphere
     if(not isEC):
-        energy_second_recon += uu.e_res*np.random.randn( nmc_detect )
+        energy_second_recon = T_sec_after_loss + uu.e_res*np.random.randn( nmc_detect )
         energy_second_recon[energy_second_recon < 0 ] = 0 ## throw out unphysical smearings below zero
 
     p_second_recon = np.sqrt( (energy_second_recon + m_sec)**2 - m_sec**2 )
@@ -119,7 +137,7 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
     return bc, hh    
 
 if(len(sys.argv)==1):
-    iso = 'y_90'
+    iso = 'p_32'
     num_reps = 1
     idx = 0
     mnu_list = "0"
