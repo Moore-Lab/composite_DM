@@ -3,7 +3,7 @@ import numpy as np
 import usphere_utils as uu
 import matplotlib.pyplot as plt
 
-def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100, isEC=True, sphere_rad=uu.sphere_radius):
+def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100, isEC=True, sphere_rad=50e-9):
     
     ## secondaries is a list of other correlated particles (augers, xrays, gammas, with probabilities)
     ## first column is the probability of that path
@@ -172,10 +172,10 @@ for cmnu in mnu_list:
     mnu = float(cmnu)
     h_tot = 0
     for i in range(num_reps):
-        print("working on iteration %d for mnu %f"%(i,mnu))
+        print("working on iteration %d for mnu %f rad %f f0 %e"%(i, mnu, sphere_rad, f0))
         curr_params = uu.params_dict
         curr_params['f0'] = f0
-        curr_params['sphere_rad'] = sphere_rad
+        curr_params['sphere_rad'] = sphere_rad/uu.m_to_nm 
         b, h = plot_recon_mass_secondaries(Q, t12, A, seconds, mnu, n_events=1e7, isEC=isEC, **curr_params)
 
         if(i==0):
