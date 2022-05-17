@@ -15,6 +15,7 @@ conf_lev = 3.84/2 ## ln(L) for 95% confidence
 me = 511 #electron mass in keV
 f0 = 1e5 #Hz, default trap freq
 e_res = 10 # keV, energy resolution of beta detection
+e_res_rel = 0.01 ## fractional resolution relative to the Q-value
 eV_to_keV = 1e-3
 m_to_nm = 1e9
 alpha = 1/137 ## fine structure constant
