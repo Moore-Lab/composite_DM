@@ -87,7 +87,7 @@ def simple_beta(E, Q, ms, A, Z):
   N = np.zeros_like(E)
   gpts = E < Q-ms
   N[gpts] = np.sqrt(E[gpts]**2 + 2*E[gpts]*me)*(E[gpts] + me)*np.sqrt((Q-E[gpts])**2 - ms**2)*(Q-E[gpts])
-  ff = fermi_func(A, Z, E) 
+  ff = fermi_func(A, Z+1, E) ## Z+1 for the daughter 
   return N*ff
 
 def profile_sig_counts(toy_data_cts, pdf_bkg, pdf_sig):
