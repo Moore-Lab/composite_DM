@@ -20,7 +20,7 @@ for f in file_list:
 
 for iso in iso_list:
 
-    if(not iso in ['p_32', 's_35', 'y_90']): continue
+    #if(not iso in ['p_32', 's_35', 'y_90']): continue
 
     curr_dict = {} ## dictionary to hold pdfs
 
@@ -28,18 +28,24 @@ for iso in iso_list:
 
     ## make a list of the masses for that iso
     mnu_list = []
+    param_list = []
     for f in iso_files:
         cfile = os.path.split(f)[-1]
         fp = cfile.split('_')
         cmnu = fp[3]
         if not cmnu in mnu_list:
             mnu_list.append(cmnu)
+        param = [fp[5], fp[7]]
+
+        if not param in param_list:
+            param_list.append(param)
 
     for mnu in mnu_list:
 
-        curr_iso_files = glob.glob(data_dir + iso + "_mnu_" + mnu + "*.npz")
+        curr_iso_files = glob.glob(data_dir + "%s_mnu_%s_rad_%s_f0_%s_pdf*.npz"%(iso, mnu, param[0], param[1]))
+        print(data_dir + "%s_mnu_%s_rad_%s_f0_%s_pdf*.npz"%(iso, mnu, param[0], param[1]))
         nfiles = len(curr_iso_files)
-        print("working on %d files for %s with mnu = %s: "%(nfiles, iso, mnu))
+        print("working on %d files for %s with mnu = %s, rad=%s, f0=%s: "%(nfiles, iso, mnu, param[0], param[1]))
 
         for i in range(nfiles):
             print(i)
@@ -63,6 +69,6 @@ for iso in iso_list:
 
 
     if(save_files):
-        of = open(save_dir + "%s_pdfs.pkl"%iso, "wb")
+        of = open(save_dir + "%s_%s_%s_pdfs.pkl"%(iso, param[0], param[1]), "wb")
         pickle.dump(curr_dict, of)
         of.close()
