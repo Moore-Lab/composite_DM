@@ -68,12 +68,13 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m,
 
 
 
-iso_list = ['p_32','s_35','y_90','be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
+iso_list = ['p_32',] #,'s_35','y_90','be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
 ## list of parameters to use (loading frac, num spheres, livetime, radius, f0)
 #params_list = [[1e-2, 1, 10], 
 #               [1e-2, 1000, 365], ]
 
-params_list = [[1e-2, 10, 365, 100, 1e5],]
+params_list = [[1e-2, 10, 365, 50, 1e5],
+               [1e-2, 10, 365, 100, 1e5],]
 
 for iso in iso_list:
 
@@ -104,7 +105,7 @@ for iso in iso_list:
 
     for i,m in enumerate(mass_list):
 
-      if( m < 1210): continue
+      #if( m < 1210): continue
 
       sig_pdf = pdfs['%.1f'%m]
       if(np.max(np.abs(bkg_pdf[:,0]-sig_pdf[:,0]))>1e-10):

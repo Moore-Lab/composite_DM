@@ -106,7 +106,7 @@ def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, et
     ## if it's a beta, need to include error on kinetic energy, and the measured energy of the
     ## particle that leaves the sphere
     if(not isEC):
-        energy_second_recon = T_sec_after_loss + uu.e_res*np.random.randn( nmc_detect )
+        energy_second_recon = T_sec_after_loss + uu.e_res_rel*Q*np.random.randn( nmc_detect )
         energy_second_recon[energy_second_recon < 0 ] = 0 ## throw out unphysical smearings below zero
 
     p_second_recon = np.sqrt( (energy_second_recon + m_sec)**2 - m_sec**2 )
