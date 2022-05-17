@@ -20,7 +20,7 @@ for f in file_list:
 
 for iso in iso_list:
 
-    #if(not iso in ['p_32', 's_35', 'y_90']): continue
+    #if(not iso in ['p_32',]): continue
 
     curr_dict = {} ## dictionary to hold pdfs
 
@@ -40,35 +40,36 @@ for iso in iso_list:
         if not param in param_list:
             param_list.append(param)
 
-    for mnu in mnu_list:
-
-        curr_iso_files = glob.glob(data_dir + "%s_mnu_%s_rad_%s_f0_%s_pdf*.npz"%(iso, mnu, param[0], param[1]))
-        print(data_dir + "%s_mnu_%s_rad_%s_f0_%s_pdf*.npz"%(iso, mnu, param[0], param[1]))
-        nfiles = len(curr_iso_files)
-        print("working on %d files for %s with mnu = %s, rad=%s, f0=%s: "%(nfiles, iso, mnu, param[0], param[1]))
-
-        for i in range(nfiles):
-            print(i)
-            pdf = np.load(curr_iso_files[i])
+    for param in param_list:
+        for mnu in mnu_list:
             
-            if(i==0):
-                p = pdf['pdf']
+            curr_iso_files = glob.glob(data_dir + "%s_mnu_%s_rad_%s_f0_%s_pdf*.npz"%(iso, mnu, param[0], param[1]))
+            print(data_dir + "%s_mnu_%s_rad_%s_f0_%s_pdf*.npz"%(iso, mnu, param[0], param[1]))
+            nfiles = len(curr_iso_files)
+            print("working on %d files for %s with mnu = %s, rad=%s, f0=%s: "%(nfiles, iso, mnu, param[0], param[1]))
+
+            for i in range(nfiles):
+                print(i)
+                pdf = np.load(curr_iso_files[i])
+                
+                if(i==0):
+                    p = pdf['pdf']
+                else:
+                    p += pdf['pdf']
+
+            x = pdf['x']
+
+            if(not iso in uu.beta_list):
+                cdf = np.cumsum(p)/np.sum(p)
+                curr_dict[mnu] = np.vstack((x,p,cdf)).T
             else:
-                p += pdf['pdf']
-
-        x = pdf['x']
-
-        if(not iso in uu.beta_list):
-            cdf = np.cumsum(p)/np.sum(p)
-            curr_dict[mnu] = np.vstack((x,p,cdf)).T
-        else:
-            ## first column is x
-            ## second column is y
-            ## remaining columns are data
-            curr_dict[mnu] = np.hstack((x,p)) 
+                ## first column is x
+                ## second column is y
+                ## remaining columns are data
+                curr_dict[mnu] = np.hstack((x,p)) 
 
 
-    if(save_files):
-        of = open(save_dir + "%s_%s_%s_pdfs.pkl"%(iso, param[0], param[1]), "wb")
-        pickle.dump(curr_dict, of)
-        of.close()
+        if(save_files):
+            of = open(save_dir + "%s_%s_%s_pdfs.pkl"%(iso, param[0], param[1]), "wb")
+            pickle.dump(curr_dict, of)
+            of.close()
