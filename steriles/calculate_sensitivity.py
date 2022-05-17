@@ -73,7 +73,7 @@ iso_list = ['p_32','s_35','y_90','be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68'
 #params_list = [[1e-2, 1, 10], 
 #               [1e-2, 1000, 365], ]
 
-params_list = [[1e-2, 10, 365, 50, 1e5],]
+params_list = [[1e-2, 10, 365, 100, 1e5],]
 
 for iso in iso_list:
 
@@ -88,7 +88,7 @@ for iso in iso_list:
     of.close()
 
     iso_dat = np.loadtxt("/home/dcm42/impulse/steriles/data_files/%s.txt"%iso, delimiter=',', skiprows=3)
-    Q, t12, A = iso_dat[0, :]
+    Q, t12, A, Z = iso_dat[0, :]
 
     mass_list_str = pdfs.keys()
     mass_list = []
@@ -104,7 +104,7 @@ for iso in iso_list:
 
     for i,m in enumerate(mass_list):
 
-      #if( livetime < 300 or m < 500): continue
+      if( m < 1210): continue
 
       sig_pdf = pdfs['%.1f'%m]
       if(np.max(np.abs(bkg_pdf[:,0]-sig_pdf[:,0]))>1e-10):

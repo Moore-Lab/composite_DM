@@ -166,7 +166,7 @@ Q, t12, A, Z = iso_dat[0, :]
 seconds = iso_dat[1:,:]
 tot_prob = np.sum(seconds[:,0])
 
-seconds = np.vstack( (seconds, [1-tot_prob, 0, 0]) ) ## add any missing prob as last row
+seconds = np.vstack( (seconds, [1-tot_prob, 0, 0, 0]) ) ## add any missing prob as last row
 
 for cmnu in mnu_list:
     mnu = float(cmnu)
