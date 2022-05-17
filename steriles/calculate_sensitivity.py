@@ -1,4 +1,4 @@
-import pickle
+import pickle, sys, glob
 import numpy as np
 import matplotlib.pyplot as plt
 import usphere_utils as uu
@@ -67,14 +67,20 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m,
     return ulim
 
 
+if(len(sys.argv)==1):
+  iso_list = ['p_32',] #,'s_35','y_90','be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
+else:
+  iso_list = [sys.argv[1],]
 
-iso_list = ['p_32',] #,'s_35','y_90','be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
 ## list of parameters to use (loading frac, num spheres, livetime, radius, f0)
-#params_list = [[1e-2, 1, 10], 
-#               [1e-2, 1000, 365], ]
 
-params_list = [[1e-2, 10, 365, 50, 1e5],
-               [1e-2, 10, 365, 100, 1e5],]
+params_list = [[1e-2, 1, 10],
+               [1e-2, 1, 30],
+               [1e-2, 1, 100],
+               [1e-2, 10, 10],
+               [1e-2, 10, 365], 
+               [1e-2, 1000, 365]]
+
 
 for iso in iso_list:
 
@@ -82,41 +88,48 @@ for iso in iso_list:
 
   for p in params_list:
 
-    loading_frac, num_spheres, livetime, rad, f0 = p
+    loading_frac, num_spheres, livetime = p
 
-    of = open('pdfs/%s_%.1f_%.1e_pdfs.pkl'%(iso,rad,f0), 'rb')
-    pdfs = pickle.load(of)
-    of.close()
+    flist = glob.glob('pdfs/%s*_pdfs.pkl'%iso)
 
-    iso_dat = np.loadtxt("/home/dcm42/impulse/steriles/data_files/%s.txt"%iso, delimiter=',', skiprows=3)
-    Q, t12, A, Z = iso_dat[0, :]
+    for file in flist:
 
-    mass_list_str = pdfs.keys()
-    mass_list = []
-    for m in mass_list_str:
-      cmass = float(m)
-      if(cmass > 0):
-        mass_list.append(cmass)
+      fparts = file.split('_')
+      rad, f0 = float(fparts[2]), float(fparts[3])
 
-    mass_list = sorted(mass_list)
+      of = open(file, 'rb')
+      pdfs = pickle.load(of)
+      of.close()
 
-    ulim = np.ones_like(mass_list)*1e6
-    bkg_pdf = pdfs['0.0']
+      iso_dat = np.loadtxt("/home/dcm42/impulse/steriles/data_files/%s.txt"%iso, delimiter=',', skiprows=3)
+      Q, t12, A, Z = iso_dat[0, :]
 
-    for i,m in enumerate(mass_list):
+      mass_list_str = pdfs.keys()
+      mass_list = []
+      for m in mass_list_str:
+        cmass = float(m)
+        if(cmass > 0):
+          mass_list.append(cmass)
 
-      #if( m < 1210): continue
+      mass_list = sorted(mass_list)
 
-      sig_pdf = pdfs['%.1f'%m]
-      if(np.max(np.abs(bkg_pdf[:,0]-sig_pdf[:,0]))>1e-10):
-        print("mismatched x vectors")
+      ulim = np.ones_like(mass_list)*1e6
+      bkg_pdf = pdfs['0.0']
 
-      curr_params = uu.params_dict
-      curr_params['f0'] = f0
-      curr_params['sphere_rad'] = rad/uu.m_to_nm 
+      for i,m in enumerate(mass_list):
 
-      ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, isEC=isEC, **curr_params)
-      print(m, ulim[i])
+        #if( m < 1210): continue
 
-    params = [loading_frac, num_spheres, livetime, rad, f0]
-    np.savez("/home/dcm42/impulse/steriles/limits/%s_limit_%.1e_%d_%.1f_%.1f_%.1e.npz"%(iso,loading_frac,num_spheres,livetime,rad,f0), m=mass_list, lim=ulim, params=params)
+        sig_pdf = pdfs['%.1f'%m]
+        if(np.max(np.abs(bkg_pdf[:,0]-sig_pdf[:,0]))>1e-10):
+          print("mismatched x vectors")
+
+        curr_params = uu.params_dict
+        curr_params['f0'] = f0
+        curr_params['sphere_rad'] = rad/uu.m_to_nm 
+
+        ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, isEC=isEC, **curr_params)
+        print(m, ulim[i])
+
+      params = [loading_frac, num_spheres, livetime, rad, f0]
+      np.savez("/home/dcm42/impulse/steriles/limits/%s_limit_%.1e_%d_%.1f_%.1f_%.1e.npz"%(iso,loading_frac,num_spheres,livetime,rad,f0), m=mass_list, lim=ulim, params=params)
