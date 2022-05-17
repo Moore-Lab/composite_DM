@@ -2,4 +2,4 @@
 ## Q (keV), T12 (days), A [amu], Z
 ## next lines are secondary particles with probabilities (prob, energy [kev], rest mass [keV])
 167.33, 87.37, 35, 16
-1.0, 167.33, 511
+1.0, 167.33, 511, 0
