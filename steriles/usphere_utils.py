@@ -67,12 +67,13 @@ def fit_fun(N, sig, pdf_sig, pdf_bkg, data):
   return np.sum( model[gpts] - data[gpts]*np.log(model[gpts]) ) 
 
 def fermi_func(A, Z, E):
-  ## Z should be negative for beta minus decay
-  R = R0 * A^(1/3)
-  p = np.sqrt( (E + me)**2 - me**2 )
+  ## Z should be positive for beta minus decay
+  R = R0 * A**(1/3)
+  Et = E + me
+  p = np.sqrt( (Et)**2 - me**2 )
   eval = 2*(np.sqrt(1 - alpha**2 * Z**2)-1)
-  gam = np.abs( gamma(np.sqrt(1 - alpha**2 * Z**2) + 1j* alpha * Z * E/p ) )**2 / gamma(2*np.sqrt(1-alpha**2 * Z**2) + 1)**2
-  f = 2*(1 + np.sqrt(1-alpha**2 * Z**2) ) * (2*p*R)**eval * np.exp(np.pi*alpha*Z*E/p) * gam
+  gam = np.abs( gamma(np.sqrt(1 - alpha**2 * Z**2) + 1j* alpha * Z * Et/p ) )**2 / gamma(2*np.sqrt(1-alpha**2 * Z**2) + 1)**2
+  f = 2*(1 + np.sqrt(1-alpha**2 * Z**2) ) * (2*p*R)**eval * np.exp(np.pi*alpha*Z*Et/p) * gam
   return f
 
 def simple_beta(E, Q, ms):
