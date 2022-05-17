@@ -1,0 +1,9 @@
+## data file for Ru-106 -- this one's a bit funny, we use the Ru-106 half life, which supports Rh-106 that we care about
+## Q (keV), T12 (days), A [amu], Z
+## next lines are secondary particles with probabilities (prob, energy [kev], rest mass [keV])
+3541, 371.8, 106, 45
+0.786, 3541, 511, 0
+0.081, 3029, 511, 0
+0.1064, 2407, 511, 0
+0.0177, 1979, 511, 0
+0.0046, 1539, 511, 0

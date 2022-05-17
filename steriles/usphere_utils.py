@@ -21,7 +21,7 @@ m_to_nm = 1e9
 alpha = 1/137 ## fine structure constant
 R0 = 1.03e6 ## nuclear radius [keV]
 
-beta_list = ['h_3','p_32','s_35', 'y_90']
+beta_list = ['h_3','p_32','s_35', 'y_90', 'ru_106', 'pr_143']
 
 params_dict = { 'eta_xyz': [0.6,0.6,0.6], ## detection efficiency in each coord
                 'f0': 1e5, ## trap resonant frequency
