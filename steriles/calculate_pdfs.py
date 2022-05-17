@@ -3,7 +3,7 @@ import numpy as np
 import usphere_utils as uu
 import matplotlib.pyplot as plt
 
-def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100, isEC=True, sphere_rad=50e-9):
+def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100, isEC=True, sphere_rad=50e-9):
     
     ## secondaries is a list of other correlated particles (augers, xrays, gammas, with probabilities)
     ## first column is the probability of that path
@@ -52,7 +52,7 @@ def plot_recon_mass_secondaries(Q, t12, A, secondaries, mnu, n_events=1e6, eta_x
         for ns in range(nsecondaries):
             elec_e_vals = np.linspace(0, Q, int(1e4)) # electron kinetic energies to evaluate beta spectrum at
             curr_Q = secondaries[ns,1] ## end point for this branch of the beta
-            beta_spec_e = uu.simple_beta(elec_e_vals, curr_Q, mnu)
+            beta_spec_e = uu.simple_beta(elec_e_vals, curr_Q, mnu, A, Z)
 
             current_pts = second_list == ns
             curr_num = np.sum(current_pts)
@@ -161,7 +161,7 @@ if(iso in uu.beta_list):
 
 iso_dat = np.loadtxt("/home/dcm42/impulse/steriles/data_files/%s.txt"%iso, delimiter=',', skiprows=3)
 
-Q, t12, A = iso_dat[0, :]
+Q, t12, A, Z = iso_dat[0, :]
 
 seconds = iso_dat[1:,:]
 tot_prob = np.sum(seconds[:,0])
@@ -176,7 +176,7 @@ for cmnu in mnu_list:
         curr_params = uu.params_dict
         curr_params['f0'] = f0
         curr_params['sphere_rad'] = sphere_rad/uu.m_to_nm 
-        b, h = plot_recon_mass_secondaries(Q, t12, A, seconds, mnu, n_events=1e7, isEC=isEC, **curr_params)
+        b, h = plot_recon_mass_secondaries(Q, t12, A, Z, seconds, mnu, n_events=1e7, isEC=isEC, **curr_params)
 
         if(i==0):
             h_tot = 1.0*h

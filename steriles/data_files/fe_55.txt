@@ -1,7 +1,7 @@
 ## data file for Fe-55
-## Q (keV), T12 (days), A [amu]
+## Q (keV), T12 (days), A [amu], Z
 ## next lines are secondary particles with probabilities (prob, energy [kev], rest mass [keV])
-231.2, 1002, 55
+231.2, 1002, 55, 26
 0.601, 5.19, 511
 0.244, 5.9, 0
 0.029, 6.5, 0

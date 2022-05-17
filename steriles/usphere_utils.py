@@ -76,7 +76,7 @@ def fermi_func(A, Z, E):
   f = 2*(1 + np.sqrt(1-alpha**2 * Z**2) ) * (2*p*R)**eval * np.exp(np.pi*alpha*Z*Et/p) * gam
   return f
 
-def simple_beta(E, Q, ms):
+def simple_beta(E, Q, ms, A, Z):
   #return a simple spectrum of counts vs electron KE (to be updated eventually)
   ## assumes E in keV
   ## Q is Q value in keV
@@ -84,7 +84,8 @@ def simple_beta(E, Q, ms):
   N = np.zeros_like(E)
   gpts = E < Q-ms
   N[gpts] = np.sqrt(E[gpts]**2 + 2*E[gpts]*me)*(E[gpts] + me)*np.sqrt((Q-E[gpts])**2 - ms**2)*(Q-E[gpts])
-  return N
+  ff = fermi_func(A, Z, E) 
+  return N*ff
 
 def profile_sig_counts(toy_data_cts, pdf_bkg, pdf_sig):
   ## function to profile over values of the signal counts
