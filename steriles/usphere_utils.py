@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
+from scipy.special import gamma
 
 ## various config parameters for impulse calculation
 
@@ -16,6 +17,8 @@ f0 = 1e5 #Hz, default trap freq
 e_res = 10 # keV, energy resolution of beta detection
 eV_to_keV = 1e-3
 m_to_nm = 1e9
+alpha = 1/137 ## fine structure constant
+R0 = 1.03e6 ## nuclear radius [keV]
 
 beta_list = ['h_3','p_32','s_35', 'y_90']
 
@@ -62,6 +65,15 @@ def fit_fun(N, sig, pdf_sig, pdf_bkg, data):
   model = N*(sig*pdf_sig + pdf_bkg)/(1+sig)
   gpts = model > 0
   return np.sum( model[gpts] - data[gpts]*np.log(model[gpts]) ) 
+
+def fermi_func(A, Z, E):
+  ## Z should be negative for beta minus decay
+  R = R0 * A^(1/3)
+  p = np.sqrt( (E + me)**2 - me**2 )
+  eval = 2*(np.sqrt(1 - alpha**2 * Z**2)-1)
+  gam = np.abs( gamma(np.sqrt(1 - alpha**2 * Z**2) + 1j* alpha * Z * E/p ) )**2 / gamma(2*np.sqrt(1-alpha**2 * Z**2) + 1)**2
+  f = 2*(1 + np.sqrt(1-alpha**2 * Z**2) ) * (2*p*R)**eval * np.exp(np.pi*alpha*Z*E/p) * gam
+  return f
 
 def simple_beta(E, Q, ms):
   #return a simple spectrum of counts vs electron KE (to be updated eventually)
