@@ -146,10 +146,10 @@ if(len(sys.argv)==1):
 else:
     iso = sys.argv[1]
     mnu_list = sys.argv[2]
-    num_reps = int(sys.argv[3])
-    idx = int(sys.argv[4])
-    sphere_rad = float(sys.argv[5])
-    f0 = float(sys.argv[6])
+    num_reps = int(sys.argv[5])
+    idx = int(sys.argv[6])
+    sphere_rad = float(sys.argv[3])
+    f0 = float(sys.argv[4])
 
 mnu_list = mnu_list.split(",")
 print(mnu_list)

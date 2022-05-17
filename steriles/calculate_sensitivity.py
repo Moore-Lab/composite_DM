@@ -6,11 +6,11 @@ import usphere_utils as uu
 ## using pdfs calculated from calculate_pdfs.py, calculate the sensitivity
 ## for a given isotope as a function of mass
 
-def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, isEC = True, trig_prob = 0.5, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100):
+def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, isEC = True, trig_prob = 0.5, eta_xyz=[0.6,0.6,0.6], f0=1e5, ang_error = 0.01, nbins=100, sphere_rad=50e-9):
 
     do_asimov = True ## use asimov dataset for sensitivity
 
-    m_sph = 4/3 * np.pi * uu.sphere_radius**3 * uu.rho
+    m_sph = 4/3 * np.pi * sphere_rad**3 * uu.rho
     n_nuclei = m_sph * uu.N_A/A * loading_frac * num_spheres
 
     if(livetime < t12):
@@ -68,12 +68,12 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m,
 
 
 
-iso_list = ['p_32','s_35','y_90'] #'p_32', 'be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
-## list of parameters to use (loading frac, num spheres, livetime)
+iso_list = ['p_32','s_35','y_90','be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
+## list of parameters to use (loading frac, num spheres, livetime, radius, f0)
 #params_list = [[1e-2, 1, 10], 
 #               [1e-2, 1000, 365], ]
 
-params_list = [[1e-2, 10, 365],]
+params_list = [[1e-2, 10, 365, 50, 1e5],]
 
 for iso in iso_list:
 
@@ -81,9 +81,9 @@ for iso in iso_list:
 
   for p in params_list:
 
-    loading_frac, num_spheres, livetime = p
+    loading_frac, num_spheres, livetime, rad, f0 = p
 
-    of = open('pdfs/%s_pdfs.pkl'%iso, 'rb')
+    of = open('pdfs/%s_%.1f_%.1e_pdfs.pkl'%(iso,rad,f0), 'rb')
     pdfs = pickle.load(of)
     of.close()
 
@@ -110,8 +110,12 @@ for iso in iso_list:
       if(np.max(np.abs(bkg_pdf[:,0]-sig_pdf[:,0]))>1e-10):
         print("mismatched x vectors")
 
-      ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, isEC=isEC, **uu.params_dict)
+      curr_params = uu.params_dict
+      curr_params['f0'] = f0
+      curr_params['sphere_rad'] = rad/uu.m_to_nm 
+
+      ulim[i] = calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m, Q, isEC=isEC, **curr_params)
       print(m, ulim[i])
 
-    params = [loading_frac, num_spheres, livetime]
-    np.savez("/home/dcm42/impulse/steriles/limits/%s_limit_%.1e_%d_%.1f.npz"%(iso,loading_frac,num_spheres,livetime), m=mass_list, lim=ulim, params=params)
+    params = [loading_frac, num_spheres, livetime, rad, f0]
+    np.savez("/home/dcm42/impulse/steriles/limits/%s_limit_%.1e_%d_%.1f_%.1f_%.1e.npz"%(iso,loading_frac,num_spheres,livetime,rad,f0), m=mass_list, lim=ulim, params=params)
