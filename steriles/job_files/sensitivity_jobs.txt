@@ -1,0 +1,11 @@
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py p_32
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py y_90
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py s_35
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py ar_37
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py be_7
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py v_49
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py cr_51
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py fe_55
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py ge_68
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py se_72
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py ru_106
