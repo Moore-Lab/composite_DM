@@ -9,8 +9,4 @@ neut_xs.xlsx
 *.tsv
 *.out
 *.pyc
-<<<<<<< HEAD
 __pycache__
-=======
-__pycache__
->>>>>>> 0d58b46c68f49c16690929e285d1a8aace80a27c
