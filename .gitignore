@@ -8,7 +8,7 @@ dsq*
 neut_xs.xlsx
 *.tsv
 *.out
-job_files/*.txt
+#job_files/*.txt
 *.pyc
 __pycache__
-limits/*.npz
+#limits/*.npz
