@@ -8,5 +8,3 @@ dsq*
 neut_xs.xlsx
 *.tsv
 *.out
-*.pyc
-__pycache__
