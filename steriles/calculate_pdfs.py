@@ -38,7 +38,6 @@ def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, et
     theta_gamma = np.arccos(2*np.random.rand(nmc_detect) - 1)
 
     ## kinetic energy of the secondary
-    
     gamma_eng = np.zeros_like(second_list) ## extra gamma decay (only relevant for betas)
     Q_vec = Q*np.ones_like(second_list) ## q value (if excited state decay, enpoint of beta only)
 
@@ -53,7 +52,7 @@ def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, et
             elec_e_vals = np.linspace(0, Q, int(1e4)) # electron kinetic energies to evaluate beta spectrum at
             curr_Q = secondaries[ns,1] ## end point for this branch of the beta
             beta_spec_e = uu.simple_beta(elec_e_vals, curr_Q, mnu, A, Z)
-
+            print(beta_spec_e)
             current_pts = second_list == ns
             curr_num = np.sum(current_pts)
             if(np.max(beta_spec_e) == 0):
@@ -72,7 +71,6 @@ def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, et
     ## instead of simulating the track in the sphere itself, just make a straight line
     ## estimate, assuming change of stopping along track is negligible
     T_sec_loss[elec_idxs] = stopping_power*rand_transit_dist * uu.eV_to_keV * uu.m_to_nm  ## in keV
-
     m_sec = secondaries[second_list,2] 
     
     ## subtract of the energy lost in the sphere before calculating the total momentum leaving
@@ -126,7 +124,7 @@ def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, et
     else:
         ## 2D histo for betas
         nbins1 = int(nbins)
-        bins_x = np.linspace(-10*uu.e_res, Q+10*uu.e_res, nbins1)
+        bins_x = np.linspace(-10*uu.e_res_rel*Q, Q+10*uu.e_res_rel*Q, nbins1)
         bins_y = np.linspace(-10*p_res, Q+10*p_res, nbins1)
         gpts = (~np.isnan(energy_second_recon)) & (~np.isnan(p_nu_recon))
         hh, bex, bey = np.histogram2d(energy_second_recon[gpts], p_nu_recon[gpts], bins=[bins_x, bins_y])
