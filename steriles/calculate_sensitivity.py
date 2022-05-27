@@ -69,18 +69,23 @@ def calc_limit(t12, A, loading_frac, num_spheres, livetime, bkg_pdf, sig_pdf, m,
 
 if(len(sys.argv)==1):
   iso_list = ['p_32',] #,'s_35','y_90','be_7','ar_37', 'v_49','cr_51',"fe_55", 'ge_68', 'se_72']
+  params_list = [[0.2, 10000, 365*5],]
 else:
   iso_list = [sys.argv[1],]
+  l = float(sys.argv[2])
+  n = int(sys.argv[3])
+  d = int(sys.argv[4])
+  params_list = [[l,n,d],]
 
 ## list of parameters to use (loading frac, num spheres, livetime, radius, f0)
 
-params_list = [[1e-2, 1, 10],
-               [1e-2, 1, 30],
-               [1e-2, 1, 100],
-               [1e-2, 10, 10],
-               [1e-2, 10, 365], 
-               [1e-2, 1000, 365]]
-
+## 20% loading by mass for h_3
+# params_list = [[0.2, 1, 10],
+#                [0.2, 1, 30],
+#                [0.2, 1, 100],
+#                [0.2, 10, 10],
+#                [0.2, 10, 365], 
+#                [0.2, 1000, 365]]
 
 for iso in iso_list:
 

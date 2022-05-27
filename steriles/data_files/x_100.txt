@@ -1,0 +1,5 @@
+## data file for "magic" low q value isotope
+## Q (keV), T12 (days), A [amu], Z
+## next lines are secondary particles with probabilities (prob, energy [kev], rest mass [keV])
+0.100, 100, 100, 45
+1.0, 0.1, 511, 0
