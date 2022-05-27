@@ -90,6 +90,7 @@ def simple_beta(E, Q, ms, A, Z):
   ff = fermi_func(A, Z+1, E) ## Z+1 for the daughter 
   out = N*ff
   out[np.isnan(out)] = 0
+  out[np.isinf(out)] = 0
   return out
 
 def profile_sig_counts(toy_data_cts, pdf_bkg, pdf_sig):
