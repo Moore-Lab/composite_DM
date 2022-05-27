@@ -77,6 +77,7 @@ def fermi_func(A, Z, E):
   eval = 2*(np.sqrt(1 - alpha**2 * Z**2)-1)
   gam = np.abs( gamma(np.sqrt(1 - alpha**2 * Z**2) + 1j* alpha * Z * Et/p ) )**2 / gamma(2*np.sqrt(1-alpha**2 * Z**2) + 1)**2
   f[gpts] = 2*(1 + np.sqrt(1-alpha**2 * Z**2) ) * (2*p*R)**eval * np.exp(np.pi*alpha*Z*Et/p) * gam
+  f[np.isnan(f)] = 0
   return f
 
 def simple_beta(E, Q, ms, A, Z):
