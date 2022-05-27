@@ -77,7 +77,6 @@ def fermi_func(A, Z, E):
   eval = 2*(np.sqrt(1 - alpha**2 * Z**2)-1)
   gam = np.abs( gamma(np.sqrt(1 - alpha**2 * Z**2) + 1j* alpha * Z * Et/p ) )**2 / gamma(2*np.sqrt(1-alpha**2 * Z**2) + 1)**2
   f[gpts] = 2*(1 + np.sqrt(1-alpha**2 * Z**2) ) * (2*p*R)**eval * np.exp(np.pi*alpha*Z*Et/p) * gam
-  f[np.isnan(f)] = 0
   return f
 
 def simple_beta(E, Q, ms, A, Z):
@@ -89,7 +88,9 @@ def simple_beta(E, Q, ms, A, Z):
   gpts = E < Q-ms
   N[gpts] = np.sqrt(E[gpts]**2 + 2*E[gpts]*me)*(E[gpts] + me)*np.sqrt((Q-E[gpts])**2 - ms**2)*(Q-E[gpts])
   ff = fermi_func(A, Z+1, E) ## Z+1 for the daughter 
-  return N*ff
+  out = N*ff
+  out[np.isnan(out)] = 0
+  return out
 
 def profile_sig_counts(toy_data_cts, pdf_bkg, pdf_sig):
   ## function to profile over values of the signal counts
