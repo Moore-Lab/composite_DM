@@ -1,0 +1,5 @@
+module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py x_100 0.000000 5.0 1.0e+03 10 0
+module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py x_100 0.000050 5.0 1.0e+03 10 0
+module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py x_100 0.000100 5.0 1.0e+03 10 0
+module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py x_100 0.000200 5.0 1.0e+03 10 0
+module load miniconda; source activate; conda activate py37_dev; python calculate_pdfs.py x_100 0.000800 5.0 1.0e+03 10 0

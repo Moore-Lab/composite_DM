@@ -137,12 +137,12 @@ def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, et
     return bc, hh    
 
 if(len(sys.argv)==1):
-    iso = 'p_32'
+    iso = 'x_100'
     num_reps = 1
     idx = 0
     mnu_list = "0"
-    sphere_rad = 50
-    f0 = 1e5
+    sphere_rad = 5
+    f0 = 1e3
 else:
     iso = sys.argv[1]
     mnu_list = sys.argv[2]
@@ -185,4 +185,4 @@ for cmnu in mnu_list:
 
     c = np.cumsum(h_tot)/np.sum(h_tot)
 
-    np.savez("/home/dcm42/impulse/steriles/data_files/%s_mnu_%.1f_rad_%.1f_f0_%.1e_pdf_%d.npz"%(iso, mnu, sphere_rad, f0, idx), x=b, pdf=h_tot, cdf=c, mnu=mnu)
+    np.savez("/home/dcm42/impulse/steriles/data_files/%s_mnu_%.6f_rad_%.1f_f0_%.1e_pdf_%d.npz"%(iso, mnu, sphere_rad, f0, idx), x=b, pdf=h_tot, cdf=c, mnu=mnu)
