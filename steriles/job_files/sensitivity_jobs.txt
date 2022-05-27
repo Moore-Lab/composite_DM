@@ -1,0 +1,2 @@
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py h_3 2.0e-01 100000 1825
+module load miniconda; source activate; conda activate py37_dev; python calculate_sensitivity.py h_3 2.0e-01 1000000 1825
