@@ -1,9 +1,5 @@
 #!/bin/bash
-sbatch dsq-h_3_jobs_35.0_1.0e+01-2022-05-24.sh
-sbatch dsq-h_3_nonzero_jobs_35.0_1.0e+01-2022-05-24.sh
-sbatch dsq-h_3_jobs_50.0_1.0e+01-2022-05-24.sh
-sbatch dsq-h_3_nonzero_jobs_50.0_1.0e+01-2022-05-24.sh
-sbatch dsq-h_3_jobs_25.0_1.0e+01-2022-05-24.sh
-sbatch dsq-h_3_nonzero_jobs_25.0_1.0e+01-2022-05-24.sh
-sbatch dsq-h_3_jobs_75.0_1.0e+01-2022-05-24.sh
-sbatch dsq-h_3_nonzero_jobs_75.0_1.0e+01-2022-05-24.sh
+sbatch dsq-x_100_jobs_5.0_1.0e+02-2022-05-27.sh
+sbatch dsq-x_100_nonzero_jobs_5.0_1.0e+02-2022-05-27.sh
+sbatch dsq-x_100_jobs_5.0_1.0e+03-2022-05-27.sh
+sbatch dsq-x_100_nonzero_jobs_5.0_1.0e+03-2022-05-27.sh
