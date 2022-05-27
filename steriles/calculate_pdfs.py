@@ -52,7 +52,6 @@ def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, et
             elec_e_vals = np.linspace(0, Q, int(1e4)) # electron kinetic energies to evaluate beta spectrum at
             curr_Q = secondaries[ns,1] ## end point for this branch of the beta
             beta_spec_e = uu.simple_beta(elec_e_vals, curr_Q, mnu, A, Z)
-            print(beta_spec_e)
             current_pts = second_list == ns
             curr_num = np.sum(current_pts)
             if(np.max(beta_spec_e) == 0):
@@ -62,6 +61,7 @@ def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, et
             gamma_eng[current_pts] = Q - curr_Q
             Q_vec[current_pts] = curr_Q
 
+    print(Q_vec)
     ## now model energy loss through the sphere, if an electron
     T_sec_loss = np.zeros_like(T_sec)
     elec_idxs = secondaries[second_list,2] == 511
