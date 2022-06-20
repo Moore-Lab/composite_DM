@@ -61,7 +61,7 @@ def plot_recon_mass_secondaries(Q, t12, A, Z, secondaries, mnu, n_events=1e6, et
             gamma_eng[current_pts] = Q - curr_Q
             Q_vec[current_pts] = curr_Q
 
-    print(Q_vec)
+    print(T_sec)
     ## now model energy loss through the sphere, if an electron
     T_sec_loss = np.zeros_like(T_sec)
     elec_idxs = secondaries[second_list,2] == 511
