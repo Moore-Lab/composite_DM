@@ -121,7 +121,7 @@ def profile_sig_counts(toy_data_cts, pdf_bkg, pdf_sig):
         break
 
   ## if we didn't get enough points, then retry with more points
-  if(i < 4):
+  if(i < 10):
     sig_range = np.linspace(0, ue4_max, 50000)
     profile = np.zeros_like(sig_range)
     best_nll = 1e20
