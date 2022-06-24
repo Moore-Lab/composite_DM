@@ -79,6 +79,17 @@ def fermi_func(A, Z, E):
   f[gpts] = 2*(1 + np.sqrt(1-alpha**2 * Z**2) ) * (2*p*R)**eval * np.exp(np.pi*alpha*Z*Et/p) * gam
   return f
 
+def fermi_func_nonrel(A, Z, E):
+  ## Z should be positive for beta minus decay
+  alpha = 1/137
+  gpts = E > 0
+  f = np.zeros_like(E)
+  Et = E[gpts] + me
+  p = np.sqrt( (Et)**2 - me**2 )
+  y = 2*np.pi*alpha*Z*Et/p
+  f[gpts] = y/(1 - np.exp(-y))
+  return f
+
 def simple_beta(E, Q, ms, A, Z):
   #return a simple spectrum of counts vs electron KE (to be updated eventually)
   ## assumes E in keV
@@ -88,6 +99,20 @@ def simple_beta(E, Q, ms, A, Z):
   gpts = E < Q-ms
   N[gpts] = np.sqrt(E[gpts]**2 + 2*E[gpts]*me)*(E[gpts] + me)*np.sqrt((Q-E[gpts])**2 - ms**2)*(Q-E[gpts])
   ff = fermi_func(A, Z+1, E) ## Z+1 for the daughter 
+  out = N*ff
+  out[np.isnan(out)] = 0
+  out[np.isinf(out)] = 0
+  return out
+
+def simple_beta_nonrel(E, Q, ms, A, Z):
+  #return a simple spectrum of counts vs electron KE (to be updated eventually)
+  ## assumes E in keV
+  ## Q is Q value in keV
+  ## ms is nu mass in keV
+  N = np.zeros_like(E)
+  gpts = E < Q-ms
+  N[gpts] = np.sqrt(E[gpts]**2 + 2*E[gpts]*me)*(E[gpts] + me)*np.sqrt((Q-E[gpts])**2 - ms**2)*(Q-E[gpts])
+  ff = fermi_func_nonrel(A, Z+1, E) ## Z+1 for the daughter 
   out = N*ff
   out[np.isnan(out)] = 0
   out[np.isinf(out)] = 0
